@@ -1,9 +1,10 @@
 /* ── Top bar title ──────────────────────────────────────────────────────── */
 
 .menu-title {
-    font-size: 1.45em;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    font-size: 2.15em;
+    font-weight: bold;
+    letter-spacing: 0.01em;
+    color: #ffffff;
 }
 
 /* ── Sidebar navigation ─────────────────────────────────────────────────── */
