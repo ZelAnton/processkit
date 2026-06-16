@@ -1,4 +1,7 @@
-# ProcessKit
+<div style="text-align:center; padding:1.5em 0 0.8em;">
+  <h1 style="font-size:3em; font-weight:800; letter-spacing:-0.03em; margin:0 0 0.15em;">ProcessKit</h1>
+  <p style="font-size:1.05em; opacity:0.65; margin:0;">Async child-process management for Rust</p>
+</div>
 
 ![ProcessKit](processkit-cover.png)
 
