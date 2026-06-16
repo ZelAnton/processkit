@@ -1,0 +1,379 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Platform support - ProcessKit</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="Async child-process management — Rust · Go · F# · Kotlin">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Overview</a></li><li class="chapter-item expanded affix "><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Rust</li><li class="chapter-item expanded "><a href="cookbook.html"><strong aria-hidden="true">1.</strong> Cookbook</a></li><li class="chapter-item expanded "><a href="commands.html"><strong aria-hidden="true">2.</strong> Running commands</a></li><li class="chapter-item expanded "><a href="process-groups.html"><strong aria-hidden="true">3.</strong> Process groups</a></li><li class="chapter-item expanded "><a href="streaming.html"><strong aria-hidden="true">4.</strong> Streaming & interactive I/O</a></li><li class="chapter-item expanded "><a href="pipelines.html"><strong aria-hidden="true">5.</strong> Pipelines</a></li><li class="chapter-item expanded "><a href="timeouts-and-cancellation.html"><strong aria-hidden="true">6.</strong> Timeouts, retries & cancellation</a></li><li class="chapter-item expanded "><a href="supervision.html"><strong aria-hidden="true">7.</strong> Supervision</a></li><li class="chapter-item expanded "><a href="testing.html"><strong aria-hidden="true">8.</strong> Testing your code</a></li><li class="chapter-item expanded "><a href="platform-support.html" class="active"><strong aria-hidden="true">9.</strong> Platform support</a></li><li class="chapter-item expanded "><a href="upgrading.html"><strong aria-hidden="true">10.</strong> Upgrading</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">ProcessKit</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/ZelAnton/ProcessKit" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/ZelAnton/ProcessKit/edit/main/docs/docs/platform-support.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="platform-support"><a class="header" href="#platform-support">Platform support</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p><code>processkit</code> supports <strong>Unix and Windows only</strong> — it requires <code>tokio::process</code>
+and OS job / process-group primitives that have no equivalent on bare targets
+like wasm. Building for such a target fails at compile time (a <code>compile_error!</code>
+guard, or earlier in tokio's own dependencies). Within the supported set, it
+treats platform support as first-class: every capability is either fully
+implemented, <em>honestly partial</em> (documented and typed), or refused with
+<code>Error::Unsupported</code> — never silently skipped. This page collects all the
+matrices and fine print in one place.</p>
+<ul>
+<li><a href="#containment-mechanisms">Containment mechanisms</a></li>
+<li><a href="#capability-matrices">Capability matrices</a></li>
+<li><a href="#caveats">Caveats</a></li>
+</ul>
+<h2 id="containment-mechanisms"><a class="header" href="#containment-mechanisms">Containment mechanisms</a></h2>
+<p><code>ProcessGroup::mechanism()</code> reports which one you actually got:</p>
+<div class="table-wrapper"><table><thead><tr><th><code>Mechanism</code></th><th>Platform</th><th>How containment works</th></tr></thead><tbody>
+<tr><td><code>JobObject</code></td><td>Windows</td><td>A Job Object with kill-on-close; children are created suspended, assigned to the job, then resumed — so even a grandchild forked in the first instant is contained</td></tr>
+<tr><td><code>CgroupV2</code></td><td>Linux (with delegation)</td><td>A private cgroup; children join in <code>pre_exec</code>, before <code>exec</code>, so descendants can never escape; teardown is <code>cgroup.kill</code></td></tr>
+<tr><td><code>ProcessGroup</code></td><td>macOS, BSDs, Linux fallback</td><td>POSIX process groups (<code>setpgid</code>); teardown is <code>killpg</code>; tracked per started/adopted child</td></tr>
+</tbody></table>
+</div>
+<p>On Linux the cgroup backend requires controller <strong>delegation</strong>, and resource
+limits specifically need this process to run at the <strong>real cgroup-v2 root</strong>. The
+crate creates the limit cgroup under this process's own cgroup and enables the
+controllers in that cgroup's <code>subtree_control</code>, which cgroup v2's "no internal
+processes" rule allows only for the real hierarchy root (the one exempt cgroup). A
+cgroup <em>namespace</em> root does <strong>not</strong> qualify — it only virtualizes the view — so an
+ordinary (private-cgroupns) container fails <code>EBUSY</code> just like a systemd
+session/scope/service. The crate does not migrate your process into a sub-cgroup
+to work around it, so in practice limits apply only at a minimal non-systemd init
+sitting at the real root. Without a usable cgroup it quietly falls back to <code>ProcessGroup</code> —
+unless you requested <a href="#capability-matrices">resource limits</a>, which fail fast
+instead (<code>Error::ResourceLimit</code>), because an unapplied cap is no protection.</p>
+<h2 id="capability-matrices"><a class="header" href="#capability-matrices">Capability matrices</a></h2>
+<p><strong>Teardown &amp; containment</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Capability</th><th>Windows JobObject</th><th>Linux cgroup</th><th>Linux pgroup</th><th>macOS/BSD</th></tr></thead><tbody>
+<tr><td>Kill-on-drop, whole tree</td><td>✅</td><td>✅</td><td>✅ groups-based</td><td>✅ groups-based</td></tr>
+<tr><td>Graceful <code>shutdown</code> (TERM → grace → KILL)</td><td>🟡 atomic kill only</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><code>adopt</code> an external child</td><td>✅ (future forks contained)</td><td>✅ (future forks contained)</td><td>🟡 exec'd child tracked individually</td><td>🟡 same</td></tr>
+</tbody></table>
+</div>
+<p><strong>Signals &amp; freezing</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Capability</th><th>Windows</th><th>Linux cgroup</th><th>Linux pgroup</th><th>macOS/BSD</th></tr></thead><tbody>
+<tr><td>Arbitrary signal (<code>Hup</code>, <code>Usr1</code>, <code>Other(n)</code>, …)</td><td>❌ <code>Kill</code> only</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><code>suspend</code> / <code>resume</code></td><td>🟡 per-thread counts</td><td>✅ <code>cgroup.freeze</code></td><td>✅ <code>SIGSTOP</code>/<code>CONT</code></td><td>✅ <code>SIGSTOP</code>/<code>CONT</code></td></tr>
+</tbody></table>
+</div>
+<p>On the cgroup mechanism, a non-<code>Kill</code> <code>signal</code> (and the <code>SIGSTOP</code>/<code>SIGCONT</code>
+fallback used for <code>suspend</code>/<code>resume</code> on pre-5.2 kernels without <code>cgroup.freeze</code>)
+surfaces a real per-member delivery failure (e.g. <code>EPERM</code>) as an <code>Err</code> rather
+than swallowing it — consistent with the "never silently skipped" philosophy; an
+<code>ESRCH</code> race (the member already exited) is still success.</p>
+<p><strong>Inspection &amp; accounting</strong> (<code>stats</code> feature)</p>
+<div class="table-wrapper"><table><thead><tr><th>Capability</th><th>Windows</th><th>Linux cgroup</th><th>Linux pgroup</th><th>macOS/BSD</th></tr></thead><tbody>
+<tr><td><code>members()</code></td><td>✅ whole tree</td><td>✅ whole tree</td><td>🟡 leaders only</td><td>🟡 leaders only</td></tr>
+<tr><td>Group CPU / peak memory</td><td>✅</td><td>✅</td><td>❌ count only</td><td>❌ count only</td></tr>
+<tr><td>Per-run <code>cpu_time</code> / <code>peak_memory_bytes</code> / <code>profile</code></td><td>✅</td><td>✅</td><td>✅ (<code>/proc</code>)</td><td>❌ <code>None</code></td></tr>
+</tbody></table>
+</div>
+<p><strong>Resource limits</strong> (<code>limits</code> feature)</p>
+<div class="table-wrapper"><table><thead><tr><th>Capability</th><th>Windows</th><th>Linux cgroup</th><th>Linux pgroup</th><th>macOS/BSD</th></tr></thead><tbody>
+<tr><td><code>memory_max</code> (whole tree)</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
+<tr><td><code>max_processes</code></td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
+<tr><td><code>cpu_quota</code></td><td>🟡 approximate</td><td>✅</td><td>❌</td><td>❌</td></tr>
+</tbody></table>
+</div>
+<p><strong>Spawn-time controls</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Capability</th><th>Windows</th><th>Unix (all)</th></tr></thead><tbody>
+<tr><td><code>inherit_env</code> allow-list</td><td>✅</td><td>✅</td></tr>
+<tr><td><code>uid</code> / <code>gid</code> drop</td><td>❌ <code>Unsupported</code></td><td>✅</td></tr>
+<tr><td><code>setsid</code></td><td>❌ <code>Unsupported</code></td><td>✅</td></tr>
+<tr><td><code>create_no_window</code></td><td>✅</td><td>no-op</td></tr>
+<tr><td><code>kill_on_parent_death</code></td><td>✅ always on (kernel)</td><td>Linux: direct child; macOS/BSD: no-op</td></tr>
+</tbody></table>
+</div>
+<p>Everything not listed — capture, streaming, interactive stdin, encodings,
+buffer policies, timeouts, retry, pipelines, supervision, readiness probes,
+the test doubles, cassettes, cancellation — is <strong>platform-agnostic</strong> and
+behaves identically everywhere.</p>
+<h2 id="caveats"><a class="header" href="#caveats">Caveats</a></h2>
+<p>The honest fine print, mostly consequences of OS semantics:</p>
+<p><strong>Windows: termination is an exit code, never <code>Signalled</code> (D18).</strong> Windows has
+no signal abstraction, so a killed process reports
+<a href="https://docs.rs/processkit/latest/processkit/enum.Outcome.html"><code>Outcome::Exited</code></a>,
+not <code>Outcome::Signalled</code>. <code>TerminateProcess</code> / <code>TerminateJobObject(_, 1)</code> is
+<code>Exited(1)</code> — indistinguishable from a voluntary <code>exit(1)</code> — and <code>Ctrl-C</code>
+surfaces as <code>Exited(-1073741510)</code> (<code>STATUS_CONTROL_C_EXIT</code> as a signed <code>i32</code>).
+The crate reports the platform truth rather than fabricating a <code>Signalled</code> from
+an NTSTATUS code (that mapping would be a lossy guess). When you need to <em>know</em>
+the run was killed, use a <code>ProcessGroup</code> deadline or a cancellation token (which
+surface as <code>TimedOut</code> / <code>Error::Cancelled</code> on every platform). <code>Outcome::Signalled</code>
+is therefore Unix-only.</p>
+<p><strong>Linux cgroup delegation.</strong> Creating the per-group cgroup needs write access
+to the cgroup v2 hierarchy. Dev boxes typically lack it → the pgroup fallback.
+CI inside containers usually has it. Check <code>mechanism()</code> when behavior must
+not silently degrade.</p>
+<p><strong><code>uid()</code>/<code>gid()</code> × the cgroup mechanism.</strong> The OS applies the uid drop
+<em>before</em> <code>pre_exec</code> hooks, and the cgroup join runs in <code>pre_exec</code> — as the
+already-dropped user, who can't write the root-owned <code>cgroup.procs</code>. The spawn
+fails with a permission error (never an uncontained child). Privilege drop
+composes cleanly with the process-group mechanism.</p>
+<p><strong><code>setsid()</code> × process groups.</strong> A new session implies a new process group;
+the crate coordinates the two (the containment tracking follows the new
+session's group), so <code>setsid</code> keeps the kill-on-drop guarantee instead of
+breaking out of it.</p>
+<p><strong><code>kill_on_parent_death()</code> is thread-scoped on Linux.</strong> <code>PR_SET_PDEATHSIG</code>
+fires when the spawning <em>thread</em> dies, not only the process. On a
+multi-threaded tokio runtime a retired worker thread could kill the child
+early; spawn from a current-thread runtime for the strongest guarantee. It
+covers the <strong>direct child only</strong> — with the parent SIGKILLed, nothing tears
+the cgroup/pgroup down, so grandchildren survive. The
+parent-died-before-arming race is closed by re-checking <code>getppid()</code> in the
+child against the spawner's pid captured before the fork — which stays
+correct when the spawner itself is PID 1 (a container entrypoint).</p>
+<p><strong>Windows: the suspended-spawn handshake.</strong> Children are created
+<code>CREATE_SUSPENDED</code>, assigned to the job, then resumed — closing the classic
+race where a fast child forks before it's in the job. A consequence: a raw
+<code>ProcessGroup::spawn</code> caller passing its own creation flags gets them OR'd
+with <code>CREATE_SUSPENDED</code> (the <code>Command</code>-driven paths handle this for you, incl.
+<code>create_no_window</code>).</p>
+<p><strong>Windows: nested suspends.</strong> <code>SuspendThread</code> keeps per-thread <em>counts</em> — two
+<code>suspend()</code> calls need two <code>resume()</code>s. The POSIX backends are level-triggered
+(idempotent). Suspension is also best-effort against a tree that is spawning
+threads mid-walk.</p>
+<p><strong>Spawning into a suspended cgroup group.</strong> The freeze is group <em>state</em>: a
+child spawned or adopted while suspended joins frozen — the forked child
+joins the cgroup <em>before</em> <code>exec</code>, so it can freeze before completing the
+spawn handshake and <strong><code>start()</code> may never return until resume</strong>. Resume
+before starting new work; details in
+<a href="process-groups.html#suspending-and-resuming">Process groups</a>.</p>
+<p><strong>Frozen trees and graceful shutdown.</strong> Hard kills penetrate a frozen tree
+(SIGKILL / <code>cgroup.kill</code> / job terminate), but a graceful <code>shutdown</code> leads
+with a <code>SIGTERM</code> the frozen processes can't handle — it waits out the full
+grace. Resume first.</p>
+<p><strong>pgroup backends: leaders, zombies, pid reuse.</strong> <code>members()</code> lists tracked
+group leaders only; an exited-but-unreaped child (zombie) still probes as
+alive (keep <code>wait()</code>ing handles if you need prompt liveness, e.g. for
+<code>shutdown</code>'s early return); and pid-based signalling is inherently
+best-effort against pid reuse — the crate prunes dead entries on every probe
+to keep the window minimal.</p>
+<hr />
+<p>Next: <a href="process-groups.html">Process groups</a> ·
+<a href="commands.html">Running commands</a> ·
+<a href="README.html">‹ docs index</a></p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="testing.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="upgrading.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="testing.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="upgrading.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

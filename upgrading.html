@@ -1,0 +1,344 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Upgrading - ProcessKit</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="Async child-process management — Rust · Go · F# · Kotlin">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Overview</a></li><li class="chapter-item expanded affix "><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Rust</li><li class="chapter-item expanded "><a href="cookbook.html"><strong aria-hidden="true">1.</strong> Cookbook</a></li><li class="chapter-item expanded "><a href="commands.html"><strong aria-hidden="true">2.</strong> Running commands</a></li><li class="chapter-item expanded "><a href="process-groups.html"><strong aria-hidden="true">3.</strong> Process groups</a></li><li class="chapter-item expanded "><a href="streaming.html"><strong aria-hidden="true">4.</strong> Streaming & interactive I/O</a></li><li class="chapter-item expanded "><a href="pipelines.html"><strong aria-hidden="true">5.</strong> Pipelines</a></li><li class="chapter-item expanded "><a href="timeouts-and-cancellation.html"><strong aria-hidden="true">6.</strong> Timeouts, retries & cancellation</a></li><li class="chapter-item expanded "><a href="supervision.html"><strong aria-hidden="true">7.</strong> Supervision</a></li><li class="chapter-item expanded "><a href="testing.html"><strong aria-hidden="true">8.</strong> Testing your code</a></li><li class="chapter-item expanded "><a href="platform-support.html"><strong aria-hidden="true">9.</strong> Platform support</a></li><li class="chapter-item expanded "><a href="upgrading.html" class="active"><strong aria-hidden="true">10.</strong> Upgrading</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">ProcessKit</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/ZelAnton/ProcessKit" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/ZelAnton/ProcessKit/edit/main/docs/docs/upgrading.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="upgrading-processkit"><a class="header" href="#upgrading-processkit">Upgrading processkit</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p>Per-version notes for <strong>consumers</strong> moving their dependency forward: what breaks,
+who it affects, and the exact change to make. The <a href="https://github.com/ZelAnton/ProcessKit-rs/blob/main/CHANGELOG.md">CHANGELOG</a> is
+the full record; this page is the "I depend on it, what do I do" view.</p>
+<blockquote>
+<p><strong>Versioning.</strong> From 1.0.0 onward <code>processkit</code> follows
+<a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>: the public API is
+stable, and any breaking change lands only in a new <strong>major</strong> version, so <code>1.x</code>
+upgrades are backward-compatible. The default Cargo requirement <code>processkit = "1"</code>
+already does the right thing — it allows <code>1.*</code> but not <code>2.0</code>. Skim the relevant
+section here before each major bump. (The <code>mock</code> feature's <code>mockall</code>-generated
+<code>expect_*</code> surface stays semver-exempt — it tracks the <code>mockall</code> version.)</p>
+</blockquote>
+<h2 id="100-from-011x"><a class="header" href="#100-from-011x">1.0.0 (from 0.11.x)</a></h2>
+<p>A few breaking changes, all <strong>caught by the compiler</strong> — if it builds after the
+bump, you're done.</p>
+<h3 id="outputlinetext-is-now-an-accessor"><a class="header" href="#outputlinetext-is-now-an-accessor"><code>OutputLine.text</code> is now an accessor</a></h3>
+<p><code>OutputLine</code> (the per-line payload of <code>RunningProcess::output_events</code>) no longer
+exposes <code>text</code> as a public field — read it via <code>line.text() -&gt; &amp;str</code> (or
+<code>line.into_text() -&gt; String</code> to take ownership). This frees the line
+representation to evolve. Fix: <code>line.text</code> → <code>line.text()</code>.</p>
+<h3 id="errorresourcelimit-is-now-a-struct-variant"><a class="header" href="#errorresourcelimit-is-now-a-struct-variant"><code>Error::ResourceLimit</code> is now a struct variant</a></h3>
+<p><code>Error::ResourceLimit(String)</code> became <code>Error::ResourceLimit { message: String }</code>
+(parity with the other rich variants, room for structured detail later). Fix a
+match <code>Error::ResourceLimit(m)</code> → <code>Error::ResourceLimit { message: m }</code>.
+(Only relevant with the <code>limits</code> feature.)</p>
+<h3 id="the-text-capture-verb-is-renamed-output--output_string"><a class="header" href="#the-text-capture-verb-is-renamed-output--output_string">The text-capture verb is renamed <code>output</code> → <code>output_string</code></a></h3>
+<p>The verb that runs to completion and returns the full <code>ProcessResult&lt;String&gt;</code>
+is now spelled <strong><code>output_string</code></strong> on every layer, matching <code>output_bytes</code> (and
+the spelling <code>Command</code>/<code>Pipeline</code>/<code>RunningProcess</code> already used). Two reasons:
+the same operation no longer has two names depending on the type, and a bare
+<code>output</code> clashed with <code>std::process::Command::output</code>, which returns <strong>bytes</strong> —
+the explicit name removes that footgun.</p>
+<p><strong>Affected if you call</strong> <code>ProcessRunner::output</code>, <code>CliClient::output</code>, the free
+fn <code>processkit::output</code>, or implement a custom <code>ProcessRunner</code> / use <code>MockRunner</code>.
+The symptom is a build error like <em>"no method named <code>output</code>"</em> /
+<em>"cannot find function <code>output</code> in crate <code>processkit</code>"</em>.</p>
+<p><strong>Fix</strong> — rename the calls (mechanical):</p>
+<div class="table-wrapper"><table><thead><tr><th>Before</th><th>After</th></tr></thead><tbody>
+<tr><td><code>runner.output(&amp;cmd)</code> / <code>client.output(args)</code></td><td><code>runner.output_string(&amp;cmd)</code> / <code>client.output_string(args)</code></td></tr>
+<tr><td><code>processkit::output(prog, args)</code></td><td><code>processkit::output_string(prog, args)</code></td></tr>
+<tr><td><code>impl ProcessRunner { async fn output(..) }</code></td><td><code>async fn output_string(..)</code> (the required method)</td></tr>
+<tr><td><code>mock.expect_output()</code></td><td><code>mock.expect_output_string()</code></td></tr>
+</tbody></table>
+</div>
+<p><code>output_bytes</code> is unchanged, and <code>Command</code>/<code>Pipeline</code>/<code>RunningProcess</code> callers
+need no change (those already used <code>output_string</code>).</p>
+<h2 id="0110-from-010x"><a class="header" href="#0110-from-010x">0.11.0 (from 0.10.x)</a></h2>
+<p>Two breaking changes, both small and <strong>caught by the compiler</strong> — if it builds
+after the bump, you're done. Plus one internal fix that needs no action.</p>
+<h3 id="1-stats-is-now-opt-in--a-cargotoml-change"><a class="header" href="#1-stats-is-now-opt-in--a-cargotoml-change">1. <code>stats</code> is now opt-in — a <code>Cargo.toml</code> change</a></h3>
+<p>The default feature set is now just <code>process-control</code>; <code>stats</code> is no longer on by
+default. (It is the one feature carrying an extra build dependency — the Windows
+<code>ProcessStatus</code> FFI used solely for the peak-memory readout — and it gates a
+specialized metrics surface the core never needs.)</p>
+<p><strong>Affected if you use any metrics API:</strong> <code>ProcessGroup::stats</code> /
+<code>ProcessGroupStats</code>, <code>RunningProcess::cpu_time</code> / <code>peak_memory_bytes</code>, or
+<code>RunProfile</code> / <code>RunningProcess::profile</code>. The symptom is a build error like
+<em>"no method named <code>stats</code> / <code>cpu_time</code> / <code>peak_memory_bytes</code> / <code>profile</code>"</em> or
+<em>"cannot find type <code>ProcessGroupStats</code> / <code>RunProfile</code>"</em>.</p>
+<p><strong>Fix</strong> — add the feature:</p>
+<pre><code class="language-toml">[dependencies]
+processkit = { version = "0.11", features = ["stats"] }
+</code></pre>
+<p>If you already enable <code>limits</code>, do <strong>nothing</strong> — <code>limits</code> still implies <code>stats</code>.</p>
+<p><strong>If you don't use metrics:</strong> nothing to do. Your default build is now slightly
+leaner (no Windows <code>ProcessStatus</code> dependency).</p>
+<h3 id="2-outputevent-carries-outputline--a-code-change"><a class="header" href="#2-outputevent-carries-outputline--a-code-change">2. <code>OutputEvent</code> carries <code>OutputLine</code> — a code change</a></h3>
+<p>Affects only callers of <code>RunningProcess::output_events</code> (the ordered
+lifecycle+output event stream). The per-line payload changed from a bare <code>String</code>
+to a <code>#[non_exhaustive]</code> <code>OutputLine</code> struct with a public <code>text</code> field.</p>
+<p>Before:</p>
+<pre><code class="language-rust ignore">use processkit::OutputEvent;
+
+while let Some(ev) = events.next().await {
+    match ev {
+        OutputEvent::Stdout(s) =&gt; println!("out: {s}"),
+        OutputEvent::Stderr(s) =&gt; eprintln!("err: {s}"),
+        _ =&gt; {}
+    }
+}</code></pre>
+<p>After — read <code>line.text</code> (in 1.0 this becomes <code>line.text()</code>; see the
+<a href="#100-from-011x">1.0.0 section</a> above):</p>
+<pre><code class="language-rust ignore">match ev {
+    OutputEvent::Stdout(line) =&gt; println!("out: {}", line.text),
+    OutputEvent::Stderr(line) =&gt; eprintln!("err: {}", line.text),
+    _ =&gt; {}
+}</code></pre>
+<p>Or, when you don't care which stream produced the line, use the new accessor:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>if let Some(text) = ev.text() {
+    println!("{text}");
+}
+<span class="boring">}</span></code></pre></pre>
+<p><code>OutputLine</code> is <code>#[non_exhaustive]</code>: you receive it from the crate and read its
+fields — you don't construct it, and a <code>match</code> on it should use <code>..</code>. The change
+exists to reserve room for per-line metadata (e.g. a timestamp or a monotonic line
+index) in a later release without another break.</p>
+<h3 id="3-cancel-precedence-fix-issue-7--no-action"><a class="header" href="#3-cancel-precedence-fix-issue-7--no-action">3. Cancel-precedence fix ("Issue 7") — no action</a></h3>
+<p>A run that reaps on its own is no longer at risk of being misreported as
+<code>Err(Cancelled)</code> by a cancellation token that fires in the narrow window between
+the reap and the disposition check. This is an internal correctness fix with no
+public-API change. If you carried a workaround that tolerated a spurious
+<code>Cancelled</code> on a self-completing run, you can remove it.</p>
+<h3 id="verify-the-upgrade"><a class="header" href="#verify-the-upgrade">Verify the upgrade</a></h3>
+<pre><code class="language-sh">cargo update -p processkit
+cargo build      # both breaking changes are compiler-caught
+cargo test
+</code></pre>
+<h2 id="upgrading-from-older-than-010"><a class="header" href="#upgrading-from-older-than-010">Upgrading from older than 0.10</a></h2>
+<p>The jumps below 0.10 predate this guide. Read the dated sections of the
+<a href="https://github.com/ZelAnton/ProcessKit-rs/blob/main/CHANGELOG.md">CHANGELOG</a> for each minor you cross — every breaking entry there
+is marked <strong>Breaking</strong> and carries its own migration note. Notable recent
+non-breaking additions you gain along the way: <code>Command::checked</code> / <code>run_unit</code>
+(0.10.2) and the <code>record</code>-cassette symlink/<code>Display</code>-injection hardening (0.10.2).</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="platform-support.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="platform-support.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

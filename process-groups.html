@@ -1,0 +1,497 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Process groups - ProcessKit</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="Async child-process management — Rust · Go · F# · Kotlin">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Overview</a></li><li class="chapter-item expanded affix "><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Rust</li><li class="chapter-item expanded "><a href="cookbook.html"><strong aria-hidden="true">1.</strong> Cookbook</a></li><li class="chapter-item expanded "><a href="commands.html"><strong aria-hidden="true">2.</strong> Running commands</a></li><li class="chapter-item expanded "><a href="process-groups.html" class="active"><strong aria-hidden="true">3.</strong> Process groups</a></li><li class="chapter-item expanded "><a href="streaming.html"><strong aria-hidden="true">4.</strong> Streaming & interactive I/O</a></li><li class="chapter-item expanded "><a href="pipelines.html"><strong aria-hidden="true">5.</strong> Pipelines</a></li><li class="chapter-item expanded "><a href="timeouts-and-cancellation.html"><strong aria-hidden="true">6.</strong> Timeouts, retries & cancellation</a></li><li class="chapter-item expanded "><a href="supervision.html"><strong aria-hidden="true">7.</strong> Supervision</a></li><li class="chapter-item expanded "><a href="testing.html"><strong aria-hidden="true">8.</strong> Testing your code</a></li><li class="chapter-item expanded "><a href="platform-support.html"><strong aria-hidden="true">9.</strong> Platform support</a></li><li class="chapter-item expanded "><a href="upgrading.html"><strong aria-hidden="true">10.</strong> Upgrading</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">ProcessKit</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/ZelAnton/ProcessKit" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/ZelAnton/ProcessKit/edit/main/docs/docs/process-groups.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="process-groups"><a class="header" href="#process-groups">Process groups</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p>A <code>ProcessGroup</code> ties the lifetime of a whole child-process <strong>tree</strong> to a Rust
+value: every process spawned into the group — and everything <em>those</em> processes
+spawn — is killed when the group is dropped. An exiting, panicking, or
+<code>?</code>-returning owner never leaks subprocesses; the kernel object enforcing this
+(Job Object / cgroup / POSIX process group) catches even grandchildren you
+never knew about. (Killing grandchildren is the problem <code>duct.py</code>'s gotchas
+list files under "currently unsolved" for pipe-based designs — kernel
+containment is the solution, and the reason this crate exists.)</p>
+<ul>
+<li><a href="#creating-a-group">Creating a group</a></li>
+<li><a href="#putting-processes-in">Putting processes in</a></li>
+<li><a href="#tearing-down-drop-terminate-shutdown">Tearing down: drop, terminate, shutdown</a></li>
+<li><a href="#signalling-the-whole-tree">Signalling the whole tree</a></li>
+<li><a href="#suspending-and-resuming">Suspending and resuming</a></li>
+<li><a href="#listing-members">Listing members</a></li>
+<li><a href="#resource-limits">Resource limits</a></li>
+<li><a href="#stats-and-sampling">Stats and sampling</a></li>
+</ul>
+<h2 id="creating-a-group"><a class="header" href="#creating-a-group">Creating a group</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{ProcessGroup, ProcessGroupOptions};
+use std::time::Duration;
+
+// Defaults: 2s graceful-shutdown grace, escalate to SIGKILL.
+let group = ProcessGroup::new()?;
+
+// Tuned:
+let group = ProcessGroup::with_options(
+    ProcessGroupOptions::default()
+        .shutdown_timeout(Duration::from_secs(10))
+        .escalate_to_kill(true),
+)?;
+
+// Which kernel mechanism is actually containing the tree?
+println!("{:?}", group.mechanism()); // JobObject | CgroupV2 | ProcessGroup
+<span class="boring">}</span></code></pre></pre>
+<p><code>mechanism()</code> reports what you actually got: <code>CgroupV2</code> quietly falls back to
+<code>ProcessGroup</code> on Linux hosts without cgroup delegation (see
+<a href="platform-support.html">Platform support</a>).</p>
+<p>You rarely create a group explicitly for one-shot runs: every
+<code>Command::run()</code>-style call makes a private group automatically. Reach for an
+explicit group when several children should share one fate, or when you need
+the group verbs below.</p>
+<h2 id="putting-processes-in"><a class="header" href="#putting-processes-in">Putting processes in</a></h2>
+<p>Three doors, in order of preference:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup};
+
+let group = ProcessGroup::new()?;
+
+// 1. start(): the full Command experience (capture, streaming, timeouts) in a
+//    SHARED group. The handle does not own the group — dropping the handle
+//    kills that child, dropping the group kills everyone.
+let server = group.start(&amp;Command::new("dev-server")).await?;
+
+// 2. spawn(): the raw escape hatch for a tokio::process::Command you already
+//    have. You get the bare Child back; pipes and reaping are your problem.
+//    spawn() takes the command BY VALUE (reuse would stack pre-exec hooks).
+let raw = tokio::process::Command::new("background-helper");
+let child = group.spawn(raw)?;
+
+// 3. adopt(): contain a child that was spawned OUTSIDE the group.
+let external = tokio::process::Command::new("legacy-launcher").spawn()?;
+group.adopt(&amp;external)?;
+<span class="boring">}</span></code></pre></pre>
+<p><code>adopt</code> moves only the named process: descendants it <em>already</em> has keep their
+old containment (future forks are captured — on Windows/cgroup). A few sharp
+edges worth knowing:</p>
+<ul>
+<li>A child that already exited <strong>but has not been reaped</strong> (no <code>wait()</code> yet — a
+zombie whose pid/handle is still valid) is a successful <strong>no-op</strong>: there is
+nothing left to contain, so <code>adopt</code> returns <code>Ok</code> on the containment backends.</li>
+<li>A child that already exited <strong>and was reaped</strong> (<code>wait()</code>ed) has no pid left —
+<code>adopt</code> returns an error rather than silently tracking nothing.</li>
+<li>On the POSIX process-group mechanism, a child that has already <code>exec</code>'d
+can't be re-grouped (POSIX forbids it), so it is tracked <em>individually</em>: the
+child itself is signalled/killed with the group, but its future forks are
+not. The caller keeps the <code>Child</code> handle and is responsible for reaping.</li>
+</ul>
+<h2 id="tearing-down-drop-terminate-shutdown"><a class="header" href="#tearing-down-drop-terminate-shutdown">Tearing down: drop, terminate, shutdown</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Verb</th><th>What happens</th><th>When</th></tr></thead><tbody>
+<tr><td><code>drop(group)</code></td><td>Immediate <strong>hard kill</strong> of the whole tree (kill-on-close)</td><td>The safety net — always on</td></tr>
+<tr><td><code>group.terminate_all()</code></td><td>The same hard kill, group stays usable (cgroup-<code>kill</code> / Job Object / process-group backends). On a <strong>pre-5.14 Linux kernel</strong> lacking <code>cgroup.kill</code>, the per-pid <code>SIGKILL</code> fallback returns <code>Err</code> if the tree doesn't drain (a fork bomb still out-spawning, or <code>D</code>-state zombies)</td><td>Explicit teardown mid-flight; idempotent</td></tr>
+<tr><td><code>group.shutdown().await</code></td><td>Unix: <code>SIGTERM</code> → wait <code>shutdown_timeout</code> → <code>SIGKILL</code> survivors (if <code>escalate_to_kill</code>); Windows: atomic job kill. Consumes the group</td><td>Graceful service stop</td></tr>
+</tbody></table>
+</div>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup, ProcessGroupOptions};
+use std::time::Duration;
+
+let group = ProcessGroup::with_options(
+    ProcessGroupOptions::default()
+        .shutdown_timeout(Duration::from_secs(5))
+        .escalate_to_kill(true),
+)?;
+let _service = group.start(&amp;Command::new("my-service")).await?;
+
+// SIGTERM, give it 5s to flush and exit, SIGKILL stragglers:
+group.shutdown().await?;
+<span class="boring">}</span></code></pre></pre>
+<p>A child that handles <code>SIGTERM</code> ends the grace <strong>early</strong> — <code>shutdown</code> returns
+as soon as the tree is empty, not after the full timeout. One subtlety: the
+liveness probe sees an exited-but-unreaped child (a zombie) as alive on the
+process-group backends, so keep <code>wait()</code>ing your handles concurrently if you
+want the early return. <code>Drop</code> can't <code>await</code>, which is why the graceful tier
+lives in this async method — dropping without calling it performs only the
+hard kill.</p>
+<h2 id="signalling-the-whole-tree"><a class="header" href="#signalling-the-whole-tree">Signalling the whole tree</a></h2>
+<blockquote>
+<p><code>signal</code>/<code>suspend</code>/<code>resume</code>/<code>members</code>/<code>adopt</code> — this section and the two
+below — require the default-on <strong><code>process-control</code></strong> feature. The teardown
+verbs above are core and always present.</p>
+</blockquote>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup, Signal};
+
+let group = ProcessGroup::new()?;
+let _server = group.start(&amp;Command::new("my-server")).await?;
+
+group.signal(Signal::Hup)?;        // "reload your configuration"
+group.signal(Signal::Usr1)?;       // whatever the tool defines
+group.signal(Signal::Other(34))?;  // raw signal number escape hatch
+<span class="boring">}</span></code></pre></pre>
+<div class="table-wrapper"><table><thead><tr><th>Platform</th><th>Deliverable signals</th></tr></thead><tbody>
+<tr><td>Linux (cgroup or pgroup), macOS/BSD</td><td>Any — <code>Term</code>, <code>Kill</code>, <code>Int</code>, <code>Hup</code>, <code>Quit</code>, <code>Usr1</code>, <code>Usr2</code>, <code>Other(n)</code></td></tr>
+<tr><td>Windows</td><td><code>Kill</code> only (maps to the Job Object terminate); anything else → <code>Error::Unsupported</code></td></tr>
+</tbody></table>
+</div>
+<p><code>Signal::Kill</code> always takes the same <em>atomic</em> whole-tree kill path as
+<code>terminate_all</code> (<code>cgroup.kill</code> / <code>killpg</code> / job terminate), so it cannot miss
+a process forked mid-broadcast. Other signals are a per-member broadcast —
+best-effort against a tree that is forking at that exact moment. An empty
+group accepts any deliverable signal trivially. On the <strong>cgroup</strong> mechanism a
+real per-member delivery failure (e.g. <code>EPERM</code> from a member that changed uid, or
+a seccomp/container restriction) is surfaced as an <code>Err</code> rather than swallowed —
+an <code>ESRCH</code> race (the member already exited) is still success; the pgroup
+(macOS/BSD, Linux-without-cgroup) backend remains purely best-effort.</p>
+<h2 id="suspending-and-resuming"><a class="header" href="#suspending-and-resuming">Suspending and resuming</a></h2>
+<p>Freeze a tree (to snapshot it, to starve a runaway while you investigate, to
+pause background work), then thaw it:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup};
+
+let group = ProcessGroup::new()?;
+let _cruncher = group.start(&amp;Command::new("cpu-hog")).await?;
+
+group.suspend()?;   // the whole tree stops consuming CPU
+// … inspect, snapshot, wait for the user …
+group.resume()?;
+<span class="boring">}</span></code></pre></pre>
+<p>Per-platform machinery — and its visible differences:</p>
+<div class="table-wrapper"><table><thead><tr><th>Platform</th><th>Mechanism</th><th>Notes</th></tr></thead><tbody>
+<tr><td>Linux cgroup</td><td>one <code>cgroup.freeze</code> write</td><td>Atomic over the subtree; freeze is <strong>group state</strong></td></tr>
+<tr><td>Linux pgroup, macOS/BSD</td><td><code>SIGSTOP</code> / <code>SIGCONT</code> broadcast</td><td>Idempotent (level-triggered)</td></tr>
+<tr><td>Windows</td><td>per-thread <code>SuspendThread</code> walk</td><td><strong>Counted</strong>: N suspends need N resumes; best-effort against mid-walk thread churn</td></tr>
+</tbody></table>
+</div>
+<p>Two caveats that bite in practice:</p>
+<ul>
+<li><strong>Spawning into a suspended group diverges.</strong> Under the cgroup mechanism a
+child spawned or adopted while the group is frozen <strong>starts frozen</strong> — and
+<code>start()</code> <em>may never return</em> until <code>resume</code> (the forked child joins the
+cgroup before <code>exec</code>, so it can freeze before completing the spawn
+handshake). Windows and the pgroup backends freeze only members present at
+the call. Rule of thumb: resume before starting new work.</li>
+<li>A suspended tree can still be <strong>hard-killed</strong> (drop / <code>terminate_all</code> /
+<code>Signal::Kill</code> all act on frozen processes), but a graceful <code>shutdown</code>
+starts with a <code>SIGTERM</code> the frozen tree can't act on — it would wait out the
+whole grace. Resume first for a clean shutdown.</li>
+</ul>
+<h2 id="listing-members"><a class="header" href="#listing-members">Listing members</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup};
+
+let group = ProcessGroup::new()?;
+let _a = group.start(&amp;Command::new("worker-a")).await?;
+let _b = group.start(&amp;Command::new("worker-b")).await?;
+
+let pids: Vec&lt;u32&gt; = group.members()?;
+println!("live members: {pids:?}");
+<span class="boring">}</span></code></pre></pre>
+<p>What "members" means depends on the mechanism: Windows and Linux-cgroup list
+the <strong>whole tree</strong> (every descendant pid); the POSIX process-group backends
+list the tracked group <em>leaders</em> (one pid per started/adopted child) — their
+descendants are contained but not enumerated. An exited child still counts
+until it is reaped. The snapshot is point-in-time: a tree that is forking
+races it.</p>
+<p>To <em>wait</em> on members rather than list them, race the handles with
+<a href="streaming.html#racing-children-with-wait_any"><code>wait_any</code></a>.</p>
+<h2 id="resource-limits"><a class="header" href="#resource-limits">Resource limits</a></h2>
+<p>Requires the <strong><code>limits</code></strong> feature. Caps are a property of the group, set once
+at creation and enforced by the same kernel object that contains the tree:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup, ProcessGroupOptions};
+
+let group = ProcessGroup::with_options(
+    ProcessGroupOptions::default()
+        .memory_max(512 * 1024 * 1024) // bytes, whole tree
+        .max_processes(64)             // fork-bomb ceiling
+        .cpu_quota(0.5),               // half of one core
+)?;
+let _sandboxed = group.start(&amp;Command::new("untrusted-tool")).await?;
+<span class="boring">}</span></code></pre></pre>
+<div class="table-wrapper"><table><thead><tr><th>Capability</th><th>Windows Job Object</th><th>Linux cgroup v2</th><th>pgroup / macOS / BSD</th></tr></thead><tbody>
+<tr><td>Memory cap</td><td>✅ whole-tree</td><td>✅ whole-tree (<code>memory.max</code>)</td><td>❌</td></tr>
+<tr><td>Process-count cap</td><td>✅</td><td>✅ (<code>pids.max</code>)</td><td>❌</td></tr>
+<tr><td>CPU quota</td><td>🟡 approximate (rate vs. total CPU)</td><td>✅ (<code>cpu.max</code>)</td><td>❌</td></tr>
+</tbody></table>
+</div>
+<p><code>cpu_quota</code> is a fraction of a <strong>single</strong> core (<code>2.0</code> = two cores). Limits
+need a real container; when a requested cap can't be enforced — no Job
+Object/cgroup, or a Linux cgroup whose controllers can't be enabled —
+<code>with_options</code> returns <code>Error::ResourceLimit</code> instead of handing back a
+silently-unbounded group. On Linux this needs the process to run at the
+<strong>real cgroup-v2 root</strong>: the crate enables the controllers in this process's own
+cgroup, which cgroup v2's "no internal processes" rule allows only for the real
+hierarchy root — <em>not</em> a cgroup-namespace root (so an ordinary container fails
+too), <em>not</em> under systemd — and the crate doesn't migrate your process. See the
+limits prerequisites in
+<a href="platform-support.html#containment-mechanisms">Platform support</a>. The <code>uid()</code>-drop
+interaction lives under its <a href="platform-support.html#caveats">Caveats</a>.</p>
+<h2 id="stats-and-sampling"><a class="header" href="#stats-and-sampling">Stats and sampling</a></h2>
+<p>Requires the opt-in <strong><code>stats</code></strong> feature (<code>features = ["stats"]</code>, or <code>limits</code>).</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup, StreamExt};
+use std::time::Duration;
+
+let group = ProcessGroup::new()?;
+let _worker = group.start(&amp;Command::new("worker")).await?;
+
+// Point-in-time:
+let snap = group.stats()?;
+println!(
+    "procs={} cpu={:?} peak_rss={:?}",
+    snap.active_process_count, snap.total_cpu_time, snap.peak_memory_bytes,
+);
+
+// …or a series: first sample immediate, then every 250ms; missed ticks are
+// skipped; the stream ends when the group can no longer report.
+let mut samples = group.sample_stats(Duration::from_millis(250));
+while let Some(s) = samples.next().await {
+    println!("rss now: {:?}", s.peak_memory_bytes);
+}
+<span class="boring">}</span></code></pre></pre>
+<p>CPU time and peak memory are available where the kernel accounts for the
+whole tree (Windows, Linux cgroup); the process-group backends report the
+member <strong>count</strong> only — the <code>Option</code> fields stay <code>None</code>. The sampler borrows
+the group, so it can neither outlive it nor keep it (and the kill-on-drop
+guarantee) alive. For a <em>single run's</em> end-to-end summary, see
+<a href="streaming.html#per-run-telemetry"><code>profile</code></a>.</p>
+<hr />
+<p>Next: <a href="streaming.html">Streaming &amp; interactive I/O</a> ·
+<a href="platform-support.html">Platform support</a> ·
+<a href="supervision.html">Supervision</a></p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="commands.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="streaming.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="commands.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="streaming.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

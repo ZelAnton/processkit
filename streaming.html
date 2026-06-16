@@ -1,0 +1,461 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Streaming &amp; interactive I/O - ProcessKit</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="Async child-process management — Rust · Go · F# · Kotlin">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Overview</a></li><li class="chapter-item expanded affix "><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Rust</li><li class="chapter-item expanded "><a href="cookbook.html"><strong aria-hidden="true">1.</strong> Cookbook</a></li><li class="chapter-item expanded "><a href="commands.html"><strong aria-hidden="true">2.</strong> Running commands</a></li><li class="chapter-item expanded "><a href="process-groups.html"><strong aria-hidden="true">3.</strong> Process groups</a></li><li class="chapter-item expanded "><a href="streaming.html" class="active"><strong aria-hidden="true">4.</strong> Streaming & interactive I/O</a></li><li class="chapter-item expanded "><a href="pipelines.html"><strong aria-hidden="true">5.</strong> Pipelines</a></li><li class="chapter-item expanded "><a href="timeouts-and-cancellation.html"><strong aria-hidden="true">6.</strong> Timeouts, retries & cancellation</a></li><li class="chapter-item expanded "><a href="supervision.html"><strong aria-hidden="true">7.</strong> Supervision</a></li><li class="chapter-item expanded "><a href="testing.html"><strong aria-hidden="true">8.</strong> Testing your code</a></li><li class="chapter-item expanded "><a href="platform-support.html"><strong aria-hidden="true">9.</strong> Platform support</a></li><li class="chapter-item expanded "><a href="upgrading.html"><strong aria-hidden="true">10.</strong> Upgrading</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">ProcessKit</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/ZelAnton/ProcessKit" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/ZelAnton/ProcessKit/edit/main/docs/docs/streaming.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="streaming--interactive-io"><a class="header" href="#streaming--interactive-io">Streaming &amp; interactive I/O</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p>The one-shot verbs in <a href="commands.html">Running commands</a> buffer the whole output.
+For long-running or conversational children, <code>Command::start()</code> returns a live
+<code>RunningProcess</code> you drive yourself: stream stdout as it arrives, write stdin
+incrementally, probe for readiness, race several children, or profile a run.</p>
+<ul>
+<li><a href="#lifecycle">Lifecycle</a></li>
+<li><a href="#streaming-stdout">Streaming stdout</a></li>
+<li><a href="#interactive-stdin">Interactive stdin</a></li>
+<li><a href="#readiness-probes">Readiness probes</a></li>
+<li><a href="#racing-children-with-wait_any">Racing children with <code>wait_any</code></a></li>
+<li><a href="#per-run-telemetry">Per-run telemetry</a></li>
+</ul>
+<h2 id="lifecycle"><a class="header" href="#lifecycle">Lifecycle</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+let mut run = Command::new("dev-server").start().await?;
+
+run.pid();        // Option&lt;u32&gt; — None once the child is reaped
+run.elapsed();    // time since spawn
+
+// Consume the handle exactly one way:
+//   output_string() / output_bytes()  → capture everything (same as the one-shot verbs)
+//   wait()                            → just the Outcome; output is discarded
+//   finish()                 → after streaming stdout (below)
+//   profile(every)                    → capture + resource samples (stats feature)
+let outcome = run.wait().await?;   // Outcome: Exited(code) / Signalled(sig) / TimedOut
+<span class="boring">}</span></code></pre></pre>
+<p><code>start()</code> puts the child in a <strong>private group the handle owns</strong>: dropping the
+<code>RunningProcess</code> kills the whole tree, exactly like dropping a one-shot run's
+future. The shared-group variant — <code>group.start(&amp;cmd)</code> — gives the same handle
+but the <em>group</em> controls the tree's fate (see
+<a href="process-groups.html#putting-processes-in">Process groups</a>).</p>
+<p>There is also an explicit <code>run.start_kill()</code> for "stop it now, I'll <code>wait()</code>
+for the code myself".</p>
+<h2 id="streaming-stdout"><a class="header" href="#streaming-stdout">Streaming stdout</a></h2>
+<p><code>stdout_lines()</code> yields decoded lines as the child produces them — no waiting
+for exit, no full-output buffering. <code>StreamExt</code> (re-exported from
+<code>tokio-stream</code>) provides <code>.next()</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::{Command, Outcome, StreamExt, Finished};
+
+#[tokio::main]
+async fn main() -&gt; processkit::Result&lt;()&gt; {
+    let mut run = Command::new("cargo")
+        .args(["build", "--release"])
+        .start()
+        .await?;
+
+    let mut lines = run.stdout_lines()?;
+    while let Some(line) = lines.next().await {
+        println!("build: {line}");
+    }
+
+    // The stream ended (stdout closed). Collect the outcome and stderr —
+    // stderr was drained in the background the whole time, so a noisy child
+    // could never block on a full pipe.
+    let Finished { outcome, stderr, .. } = run.finish().await?;
+    if outcome != Outcome::Exited(0) {
+        eprintln!("build failed ({outcome:?}):\n{stderr}");
+    }
+    Ok(())
+}</code></pre></pre>
+<p>Things to know:</p>
+<ul>
+<li><strong>Call <code>stdout_lines()</code> once.</strong> It is fallible: a second <code>stdout_lines</code> /
+<code>output_events</code> call (stdout is consumed once), or a non-piped stdout
+(<code>StdioMode::Inherit</code>/<code>Null</code>), returns <code>Err</code> rather than a silently-empty
+stream.</li>
+<li><strong>The command's <code>timeout</code> bounds the stream</strong> on an own-group handle: at the
+deadline the tree is killed, the pipes close, and the stream ends — a
+streamed run can't hang past its deadline. A <code>cancel_on</code> token ends it the
+same way; the following
+<code>finish</code> then reports <code>Error::Cancelled</code>. Details in
+<a href="timeouts-and-cancellation.html">Timeouts &amp; cancellation</a>.</li>
+<li>Line counters tick live: <code>run.stdout_line_count()</code> / <code>stderr_line_count()</code>
+are cheap progress gauges even while you stream.</li>
+<li>The <a href="commands.html#output-handling">buffer policy and line handlers</a> apply to
+streamed runs too — a handler sees each line on the pump, in addition to
+your loop.</li>
+<li>The whole streaming surface is <strong>hermetically testable</strong>: a
+<code>ScriptedRunner</code>'s <code>start()</code> returns a handle whose canned lines flow
+through the same pump machinery — <code>stdout_lines</code>, the readiness probes, and
+<code>finish</code> behave identically with no subprocess. See
+<a href="testing.html#scripted-streaming">Testing → scripted streaming</a>.</li>
+</ul>
+<h2 id="interactive-stdin"><a class="header" href="#interactive-stdin">Interactive stdin</a></h2>
+<p>Conversational tools — write a request, read the response, repeat. Keep stdin
+open with <code>keep_stdin_open()</code>, take the writer with <code>take_stdin()</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::{Command, Outcome, StreamExt, Finished};
+
+// `ProcessStdin`'s writer methods return `std::io::Result`; `Box&lt;dyn Error&gt;`
+// mixes them with the crate's `Result` (or `.map_err(processkit::Error::Io)?`).
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    // `bc` evaluates each stdin line and prints the result.
+    let mut run = Command::new("bc").keep_stdin_open().start().await?;
+    let mut stdin = run.take_stdin().expect("stdin was kept open");
+    let mut answers = run.stdout_lines()?;
+
+    stdin.write_line("2 + 2").await?;             // writes "2 + 2\n", flushed
+    println!("= {}", answers.next().await.unwrap());
+
+    stdin.write_line("6 * 7").await?;
+    println!("= {}", answers.next().await.unwrap());
+
+    stdin.finish().await?;                        // send EOF — bc exits
+    let Finished { outcome, .. } = run.finish().await?;
+    assert_eq!(outcome, Outcome::Exited(0));
+    Ok(())
+}</code></pre></pre>
+<p><code>ProcessStdin</code> offers <code>write(&amp;[u8])</code>, <code>write_line(&amp;str)</code> (newline + flush),
+<code>flush()</code>, and <code>finish()</code> (EOF). Dropping the writer — or the whole
+<code>RunningProcess</code> — closes stdin too; <code>finish()</code> just makes the EOF explicit
+and awaitable.</p>
+<p><strong>Avoid the full-duplex deadlock.</strong> A child's stdout pipe has a finite OS
+buffer; once it fills, the child blocks <em>writing</em> stdout until something reads
+it. If you push a large interactive stdin while nothing drains the child's
+stdout, the child stops reading stdin (blocked on stdout), your <code>write</code> parks
+waiting for stdin buffer space, and neither side progresses. The <code>bc</code> example
+above is safe because it interleaves one write with one read; when you both feed
+a sizable stdin <strong>and</strong> the child produces output, drain <code>stdout_lines</code> from one
+task while writing stdin from another. (The non-interactive <code>Stdin::from_*</code>
+sources are safe — the crate writes them on a background task that runs
+concurrently with the output pumps.)</p>
+<p>For <em>one-directional</em> streamed input (a channel, a file tail) you don't need
+interactivity — give the command <code>Stdin::from_lines(stream)</code> /
+<code>Stdin::from_reader(reader)</code> and let the background writer feed it; see the
+<a href="commands.html#standard-input">stdin source table</a>.</p>
+<h2 id="readiness-probes"><a class="header" href="#readiness-probes">Readiness probes</a></h2>
+<p>"Start a server, then use it" needs <em>ready</em>, not merely <em>started</em>. Three
+probes replace the arbitrary sleep, each bounded by its own deadline:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+use std::time::Duration;
+
+let mut run = Command::new("my-server").start().await?;
+
+// 1. A line on stdout (returns the matching line):
+let banner = run
+    .wait_for_line(|l| l.contains("listening on"), Duration::from_secs(10))
+    .await?;
+
+// 2. A TCP port accepting connections:
+run.wait_for_port("127.0.0.1:8080".parse().unwrap(), Duration::from_secs(10))
+    .await?;
+
+// 3. Any async predicate (an HTTP /health endpoint, a file appearing, …):
+run.wait_for(|| async { health_check().await }, Duration::from_secs(10))
+    .await?;
+
+// ready — use the server…
+<span class="boring">}</span></code></pre></pre>
+<p>Probe semantics, deliberately uniform:</p>
+<ul>
+<li>A probe that can't pass within its deadline fails with <strong><code>Error::NotReady</code></strong>
+— distinct from <code>Error::Timeout</code>, which is the run's own deadline.</li>
+<li>A probe also fails <em>fast</em> once readiness can no longer happen: the child
+exits, or (for <code>wait_for_line</code>) its stdout closes — no waiting out a 30s
+deadline on a dead server.</li>
+<li>A failed probe <strong>never kills the child.</strong> You decide: retry, log and
+continue, or tear down.</li>
+<li><code>wait_for_line</code> consumes stdout up to (and including) the match — continue
+with <code>finish</code> or further streaming. <code>wait_for_port</code> / <code>wait_for</code>
+don't touch the pipes at all.</li>
+</ul>
+<h2 id="racing-children-with-wait_any"><a class="header" href="#racing-children-with-wait_any">Racing children with <code>wait_any</code></a></h2>
+<p>The free function <code>wait_any</code> races several running processes and reports
+whichever exits first — the natural primitive for "restart whatever died" or
+"first answer wins":</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup, wait_any};
+
+let group = ProcessGroup::new()?;
+let mut a = group.start(&amp;Command::new("replica-a")).await?;
+let mut b = group.start(&amp;Command::new("replica-b")).await?;
+
+let (index, outcome) = wait_any(&amp;mut [&amp;mut a, &amp;mut b]).await?;
+println!("contender #{index} exited first with {outcome:?}");
+
+// Only borrows: the loser is still usable.
+let survivor = if index == 0 { &amp;mut b } else { &amp;mut a };
+<span class="boring">}</span></code></pre></pre>
+<p><code>wait_any</code> takes <code>&amp;mut</code> borrows, applies no timeout of its own (wrap it in
+<code>tokio::time::timeout</code> to bound the race), and does no output pumping — drain
+chatty children first or give them bounded
+<a href="commands.html#output-handling">buffer policies</a>.</p>
+<h2 id="per-run-telemetry"><a class="header" href="#per-run-telemetry">Per-run telemetry</a></h2>
+<p>With the opt-in <strong><code>stats</code></strong> feature, a running child reports its own
+resource usage, and <code>profile()</code> turns a whole run into a summary:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+use std::time::Duration;
+
+let run = Command::new("crunch").start().await?;
+run.cpu_time();          // Option&lt;Duration&gt; — user+kernel so far
+run.peak_memory_bytes(); // Option&lt;u64&gt;
+
+// …or capture + sample on an interval until exit:
+let profile = Command::new("crunch")
+    .start().await?
+    .profile(Duration::from_millis(100))
+    .await?;
+
+println!(
+    "exit={:?} wall={:?} cpu={:?} peak_rss={:?} avg_cpu={:?} ({} samples)",
+    profile.exit_code,
+    profile.duration,
+    profile.cpu_time,
+    profile.peak_memory_bytes,
+    profile.avg_cpu(),          // cpu / wall — e.g. Some(1.7) ≈ 1.7 cores busy
+    profile.samples,
+);
+<span class="boring">}</span></code></pre></pre>
+<p>These read the <em>child process itself</em> (not a whole tree — that's
+<a href="process-groups.html#stats-and-sampling"><code>ProcessGroup::stats</code></a>), and
+availability follows the platform: full CPU/memory on Windows and Linux,
+<code>None</code> where the kernel doesn't account per-process cheaply — see
+<a href="platform-support.html">Platform support</a>.</p>
+<hr />
+<p>Next: <a href="pipelines.html">Pipelines</a> ·
+<a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a> ·
+<a href="supervision.html">Supervision</a></p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="process-groups.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="pipelines.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="process-groups.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="pipelines.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

@@ -1,0 +1,606 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Running commands - ProcessKit</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="Async child-process management — Rust · Go · F# · Kotlin">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Overview</a></li><li class="chapter-item expanded affix "><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Rust</li><li class="chapter-item expanded "><a href="cookbook.html"><strong aria-hidden="true">1.</strong> Cookbook</a></li><li class="chapter-item expanded "><a href="commands.html" class="active"><strong aria-hidden="true">2.</strong> Running commands</a></li><li class="chapter-item expanded "><a href="process-groups.html"><strong aria-hidden="true">3.</strong> Process groups</a></li><li class="chapter-item expanded "><a href="streaming.html"><strong aria-hidden="true">4.</strong> Streaming & interactive I/O</a></li><li class="chapter-item expanded "><a href="pipelines.html"><strong aria-hidden="true">5.</strong> Pipelines</a></li><li class="chapter-item expanded "><a href="timeouts-and-cancellation.html"><strong aria-hidden="true">6.</strong> Timeouts, retries & cancellation</a></li><li class="chapter-item expanded "><a href="supervision.html"><strong aria-hidden="true">7.</strong> Supervision</a></li><li class="chapter-item expanded "><a href="testing.html"><strong aria-hidden="true">8.</strong> Testing your code</a></li><li class="chapter-item expanded "><a href="platform-support.html"><strong aria-hidden="true">9.</strong> Platform support</a></li><li class="chapter-item expanded "><a href="upgrading.html"><strong aria-hidden="true">10.</strong> Upgrading</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">ProcessKit</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/ZelAnton/ProcessKit" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/ZelAnton/ProcessKit/edit/main/docs/docs/commands.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="running-commands"><a class="header" href="#running-commands">Running commands</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p><code>Command</code> is the entry point of the runner layer: a builder describing <em>what</em>
+to run and <em>how</em>, plus a family of consuming verbs that decide <em>what you get
+back</em>. Every one-shot verb spawns the child into a fresh, private kill-on-drop
+<a href="process-groups.html">process group</a>, so an early return, panic, or dropped
+future can never leak a process tree.</p>
+<ul>
+<li><a href="#program-arguments-working-directory">Program, arguments, working directory</a></li>
+<li><a href="#environment">Environment</a></li>
+<li><a href="#standard-input">Standard input</a></li>
+<li><a href="#output-handling">Output handling</a></li>
+<li><a href="#timeouts-and-retries">Timeouts and retries</a></li>
+<li><a href="#privileges-and-spawn-flags">Privileges and spawn flags</a></li>
+<li><a href="#consuming-verbs">Consuming verbs</a></li>
+<li><a href="#results-and-errors">Results and errors</a></li>
+</ul>
+<h2 id="program-arguments-working-directory"><a class="header" href="#program-arguments-working-directory">Program, arguments, working directory</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+let out = Command::new("git")
+    .arg("log")                          // one at a time…
+    .args(["--oneline", "-n", "10"])     // …or in bulk
+    .current_dir("/path/to/repo")        // run there
+    .run()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p>Arguments are passed as an array — there is <strong>no shell</strong> between you and the
+child, so there is no quoting, no word-splitting, and no injection surface.
+(When you actually want <code>a | b | c</code>, use a <a href="pipelines.html">pipeline</a>, which
+connects the stages in-process instead of invoking a shell.)</p>
+<p>The program name reaches the OS <strong>verbatim</strong> — two deliberate non-goals
+(conveniences some libraries layer on, e.g. <code>duct</code>): a bare name is resolved
+on <code>PATH</code> by the OS, never rewritten to <code>./name</code>; and <code>current_dir</code> does not
+re-anchor a <em>relative</em> program path against the new directory — whether
+<code>Command::new("./tool").current_dir(dir)</code> resolves <code>tool</code> relative to <code>dir</code>
+is the platform's behavior (Unix: yes; Windows: the parent's directory may
+win). Pass absolute program paths when combining the two.</p>
+<p>For quick one-liners the free functions skip the builder:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let version = processkit::run("cargo", ["--version"]).await?;       // trimmed stdout, success required
+let result  = processkit::output_string("git", ["status", "-s"]).await?;   // full ProcessResult
+<span class="boring">}</span></code></pre></pre>
+<h2 id="environment"><a class="header" href="#environment">Environment</a></h2>
+<p>Four builders compose, applied in a fixed order at spawn:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+Command::new("worker")
+    .env("RUST_LOG", "debug")        // set one variable
+    .env_remove("GIT_DIR")           // unset one inherited variable
+    .run().await?;
+
+// Allow-list mode: clear everything, copy only the named parent variables.
+Command::new("sandboxed-tool")
+    .inherit_env(["PATH", "HOME", "LANG"])
+    .env("MODE", "ci")               // explicit env/env_remove still apply on top
+    .run().await?;
+
+// Scorched earth: the child starts with an empty environment.
+Command::new("hermetic-tool").env_clear().run().await?;
+<span class="boring">}</span></code></pre></pre>
+<p><code>inherit_env</code> is the sandboxing middle ground: it implies <code>env_clear</code>, then
+copies the listed variables <em>from the parent at each spawn</em> (so a retry sees
+fresh values), and repeated calls accumulate names. A name the parent doesn't
+have is skipped, not set to empty.</p>
+<h2 id="standard-input"><a class="header" href="#standard-input">Standard input</a></h2>
+<p>By default stdin is <strong>closed at spawn</strong> — the child reads EOF immediately and
+can never hang waiting for input. Everything else is opt-in via
+<code>stdin(Stdin::…)</code>:</p>
+<div class="table-wrapper"><table><thead><tr><th>Source</th><th>Reusable on re-run?</th><th>Use for</th></tr></thead><tbody>
+<tr><td><code>Stdin::empty()</code></td><td>—</td><td>The default, explicit</td></tr>
+<tr><td><code>Stdin::from_string("…")</code></td><td>✅</td><td>Text payloads</td></tr>
+<tr><td><code>Stdin::from_bytes(vec![…])</code></td><td>✅</td><td>Binary payloads</td></tr>
+<tr><td><code>Stdin::from_iter_lines(["a", "b"])</code></td><td>✅</td><td>Anything iterable; each item is written <code>\n</code>-terminated</td></tr>
+<tr><td><code>Stdin::from_file(path)</code></td><td>✅ (re-opened per run)</td><td>Large inputs streamed from disk</td></tr>
+<tr><td><code>Stdin::from_reader(reader)</code></td><td>❌ one-shot</td><td>Any <code>AsyncRead</code> — a socket, a decompressor, …</td></tr>
+<tr><td><code>Stdin::from_lines(stream)</code></td><td>❌ one-shot</td><td>Any <code>Stream&lt;Item = String&gt;</code> — a channel, a tail, …</td></tr>
+</tbody></table>
+</div>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, Stdin};
+
+let sorted = Command::new("sort")
+    .stdin(Stdin::from_iter_lines(["banana", "apple", "cherry"]))
+    .run()
+    .await?;
+assert_eq!(sorted, "apple\nbanana\ncherry");
+<span class="boring">}</span></code></pre></pre>
+<p>The payload is written on a background task (so a large input can't deadlock
+against the child's output) and the pipe is dropped afterwards to signal EOF.
+The two <em>one-shot</em> sources are consumed by their first run: a retried or
+cloned command reusing them <strong>fails loud</strong> the second time — re-running a
+consumed <code>from_reader</code>/<code>from_lines</code> source is an <code>Error::Io</code> (<code>InvalidInput</code>)
+at launch (D10), not a silent empty stdin. Prefer the reusable sources when
+a command may run more than once.</p>
+<p>For conversational, request/response stdin — write a line, read the answer,
+repeat — use <code>keep_stdin_open()</code> and the streaming API instead: see
+<a href="streaming.html#interactive-stdin">Streaming &amp; interactive I/O</a>.</p>
+<h2 id="output-handling"><a class="header" href="#output-handling">Output handling</a></h2>
+<h3 id="encodings"><a class="header" href="#encodings">Encodings</a></h3>
+<p>Output is decoded line by line, UTF-8 by default (invalid bytes become
+<code>U+FFFD</code>, never an error). Legacy-encoding tools can override per stream:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+let out = Command::new("legacy-tool")
+    .encoding(encoding_rs::SHIFT_JIS)          // both streams…
+    // .stdout_encoding(…) / .stderr_encoding(…) // …or each its own
+    .output_string()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p>(<code>processkit::Encoding</code> re-exports <code>encoding_rs::Encoding</code>, so any of its
+encodings works — the single-byte and ASCII-compatible multibyte ones
+(<code>WINDOWS_1252</code>, <code>GBK</code>, <code>SHIFT_JIS</code>, …) <strong>and</strong> the non-ASCII-compatible ones
+(<code>UTF_16LE</code>/<code>UTF_16BE</code>): output is fed through one persistent decoder and split
+on decoded newlines, so a <code>0x0A</code> byte inside a UTF-16 code unit is not mistaken
+for a line break. A leading byte-order mark of the chosen encoding is stripped
+once at the stream start.)</p>
+<h3 id="buffer-policies--bounding-memory-on-chatty-children"><a class="header" href="#buffer-policies--bounding-memory-on-chatty-children">Buffer policies — bounding memory on chatty children</a></h3>
+<p>Captured lines are held in memory; a multi-gigabyte log would normally grow
+the buffer to match. <code>output_buffer</code> bounds <em>retention</em> (the pipe is always
+fully drained, so the child never blocks):</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, OutputBufferPolicy, OverflowMode};
+
+let tail = Command::new("verbose-build")
+    .output_buffer(OutputBufferPolicy::bounded(1_000)) // keep the newest 1000 lines
+    .output_string()
+    .await?;
+
+// …or keep the head instead of the tail:
+let head_policy = OutputBufferPolicy::bounded(1_000).with_overflow(OverflowMode::DropNewest);
+<span class="boring">}</span></code></pre></pre>
+<p><code>DropOldest</code> (the default) keeps a rolling tail; <code>DropNewest</code> freezes the
+head. <code>bounded(0)</code> retains nothing — useful when a line handler (below) is the
+real consumer. Under a <em>line</em> cap, dropped or not, <strong>every</strong> line still feeds
+the handlers and the line counters.</p>
+<p>The line cap alone does not bound memory — one enormous newline-free "line"
+(<code>base64 -w0</code>) is held whole. Add <code>with_max_bytes</code> to cap the <em>retained bytes</em>
+too (either ceiling, or both); the byte cap also bounds the pump's in-flight
+assembly buffer, so a never-terminated flood can't exhaust memory. One
+consequence: a line whose own length exceeds the byte cap can't be assembled, so
+it is dropped <strong>whole</strong> — counted, but <strong>not</strong> delivered to a per-line handler or
+<code>stdout_tee</code> (don't set a byte cap if a tee must see arbitrarily long lines):</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">use processkit::{Command, OutputBufferPolicy};
+</span>let policy = OutputBufferPolicy::unbounded().with_max_bytes(8 &lt;&lt; 20); // 8 MiB ring
+let strict = OutputBufferPolicy::fail_loud(10_000).with_max_bytes(8 &lt;&lt; 20); // error on either
+<span class="boring">}</span></code></pre></pre>
+<p><code>fail_loud</code> makes the ceiling <strong>error</strong> instead of dropping: the run fails with
+<code>Error::OutputTooLarge</code> once the cumulative output (lines <em>or</em> bytes) crosses the
+cap — even when a streaming consumer is draining lines as they arrive. It bounds
+memory, not wall-time, so pair it with <code>timeout</code> against a flooding child.</p>
+<p>Even under a <em>drop</em> policy (<code>DropOldest</code>/<code>DropNewest</code>), the checking verbs that
+hand back stdout as if complete — <code>run</code>, <code>parse</code>, <code>try_parse</code> — <strong>refuse</strong>
+silently-truncated output (B12): if the policy dropped lines they fail with
+<code>Error::OutputTooLarge</code> rather than feed a parser a truncated tail. The lenient
+capture verbs (<code>output_string</code> / <code>output_bytes</code>) are unaffected — they return
+the partial result with <code>truncated()</code> set for you to inspect.</p>
+<h3 id="line-handlers--tee-output-as-it-arrives"><a class="header" href="#line-handlers--tee-output-as-it-arrives">Line handlers — tee output as it arrives</a></h3>
+<p><code>on_stdout_line</code> / <code>on_stderr_line</code> run a callback on each decoded line <em>in
+addition to</em> capture or streaming — logging, progress bars, metrics:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+let result = Command::new("cargo")
+    .args(["build", "--release"])
+    .on_stderr_line(|line| eprintln!("[build] {line}"))
+    .output_string()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p>The handler runs on the read pump — keep it cheap. The contract is forgiving
+and precisely specified:</p>
+<ul>
+<li><strong>A panicking handler does not poison the run.</strong> The panic is caught, the
+handler is disabled for the rest of the run (surfaced as a <code>tracing</code> warn
+when that feature is on), and pumping continues — the final result still
+carries <strong>every</strong> line. You can safely re-export this callback seam to your
+own users without auditing their closures.</li>
+<li><strong>Ordering:</strong> invocations are FIFO within a stream; there is no ordering
+between stdout and stderr handlers (two independent pumps). On the
+consuming verbs, <strong>all handler calls happen-before the awaited future
+resolves</strong> — finalize a progress bar the moment the call returns. (One
+documented exception: a leaked pipe held open past the child's death is cut
+off after a bounded teardown grace.)</li>
+<li>Handlers are <strong>hermetically testable</strong>: <code>ScriptedRunner</code> replays canned
+output through them — see
+<a href="testing.html#scripting-replies">Testing → scripting replies</a>.</li>
+</ul>
+<p>For a ready-made tee to an async sink — a file, socket, or any
+[<code>tokio::io::AsyncWrite</code>] — reach for <code>stdout_tee</code> / <code>stderr_tee</code> instead of
+hand-writing a handler. Each decoded line is written to the sink (plus a <code>\n</code>)
+as it is produced, <strong>awaited on the pump</strong> so a slow sink applies backpressure
+(the pump slows, the pipe fills, the child blocks) rather than blocking the
+runtime; a write error disables the tee with a <code>tracing</code> warn instead of being
+swallowed. It runs <strong>independently</strong> of <code>on_stdout_line</code> — set both and both
+fire per line.</p>
+<h2 id="timeouts-and-retries"><a class="header" href="#timeouts-and-retries">Timeouts and retries</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, Error};
+use std::time::Duration;
+
+let out = Command::new("flaky-network-tool")
+    .timeout(Duration::from_secs(30))                 // kill the tree at the deadline
+    .retry(3, Duration::from_millis(200), |e| {       // up to 3 attempts total
+        matches!(e, Error::Timeout { .. })            // …but only retry timeouts
+    })
+    .run()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li><strong><code>timeout</code></strong> kills the whole process tree at the deadline. On the capturing
+verbs the expiry is <em>captured</em> (<code>ProcessResult::timed_out</code>), on the
+success-checking verbs it <em>raises</em> <code>Error::Timeout</code> — the full decision
+table lives in <a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a>.</li>
+<li><strong><code>retry</code></strong> applies to the success-checking verbs only (<code>run</code>, <code>exit_code</code>,
+<code>probe</code>, and <code>ProcessRunnerExt::checked</code>); the classifier sees the typed
+error and decides. The non-erroring <code>output_string</code> path never retries.</li>
+</ul>
+<h2 id="privileges-and-spawn-flags"><a class="header" href="#privileges-and-spawn-flags">Privileges and spawn flags</a></h2>
+<p>Spawn-time controls for sandboxing and service launch:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+// Unix: drop privileges (uid + gid + supplementary groups) and detach.
+Command::new("worker")
+    .gid(1000)            // applied before uid (a gid change needs privilege)
+    .groups([1000])       // replace the inherited (often root's) supplementary groups
+    .uid(1000)            // dropped last
+    .setsid()             // new session: survives the controlling terminal
+    .run().await?;
+
+// Windows: no console window flashing up from a GUI app.
+Command::new("helper").create_no_window().run().await?;
+
+// Hardening: take the direct child down even if THIS process is SIGKILLed
+// (Drop never runs). Windows has this for free; Linux arms PDEATHSIG.
+Command::new("worker").kill_on_parent_death().start().await?;
+<span class="boring">}</span></code></pre></pre>
+<p><code>uid</code> / <code>gid</code> / <code>groups</code> / <code>setsid</code> are POSIX-only — on Windows the run
+fails with <code>Error::Unsupported</code> rather than silently skipping a privilege drop.
+A correct drop sets all three of <code>uid</code>/<code>gid</code>/<code>groups</code>: dropping the uid alone
+leaves the child holding the parent's (often root's) supplementary groups.
+<code>create_no_window</code> is a harmless no-op outside Windows.
+<code>kill_on_parent_death</code> is best-effort by design: guaranteed on Windows
+(regardless of the knob), direct-child-only on Linux, unavailable on
+macOS/BSD — the graceful-exit guarantee via <code>Drop</code> holds everywhere either
+way. Containment is preserved in every combination; the platform fine print
+(the Linux cgroup × <code>uid</code> interaction, <code>setsid</code> × process-group coordination,
+the pdeathsig thread caveat) is collected in
+<a href="platform-support.html#caveats">Platform support</a>.</p>
+<p><strong>Interactive auth / TTY.</strong> processkit wires <strong>pipes</strong>, not a pseudo-terminal,
+so a tool that <em>demands</em> a tty — an <code>ssh</code>/<code>sudo</code> <strong>password</strong> prompt, some
+credential helpers — won't get one (PTY support is not implemented; the
+trade-off is recorded in <code>decisions/permissions-privileges-pty-network.md</code>). Drive
+such tools <strong>non-interactively</strong> instead: key-based auth, <code>ssh -o BatchMode=yes</code>, <code>GIT_SSH_COMMAND</code> / <code>GIT_TERMINAL_PROMPT=0</code>, or feed a known
+answer over <a href="streaming.html#interactive-stdin">interactive stdin</a>. Conversational
+tools that read stdin without needing a tty already work today via
+<code>keep_stdin_open</code> + <code>stdout_lines</code>.</p>
+<h2 id="consuming-verbs"><a class="header" href="#consuming-verbs">Consuming verbs</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Verb</th><th>Returns</th><th>Non-zero exit</th><th>Timeout</th><th>Use when</th></tr></thead><tbody>
+<tr><td><code>output_string()</code></td><td><code>ProcessResult&lt;String&gt;</code></td><td>captured</td><td>captured (<code>timed_out</code>)</td><td>You want to inspect the outcome yourself</td></tr>
+<tr><td><code>output_bytes()</code></td><td><code>ProcessResult&lt;Vec&lt;u8&gt;&gt;</code></td><td>captured</td><td>captured</td><td>Binary stdout (images, archives, …)</td></tr>
+<tr><td><code>run()</code></td><td>trimmed stdout <code>String</code></td><td><code>Error::Exit</code></td><td><code>Error::Timeout</code></td><td>"Give me the answer or fail"</td></tr>
+<tr><td><code>exit_code()</code></td><td><code>i32</code></td><td>the code, <code>Ok</code></td><td><code>Error::Timeout</code></td><td>The code <em>is</em> the answer</td></tr>
+<tr><td><code>probe()</code></td><td><code>bool</code></td><td><code>0</code>→<code>true</code>, <code>1</code>→<code>false</code>, else <code>Error::Exit</code></td><td><code>Error::Timeout</code></td><td>Predicate commands: <code>git diff --quiet</code>, <code>grep -q</code></td></tr>
+<tr><td><code>first_line(pred)</code></td><td><code>Option&lt;String&gt;</code></td><td>— (stream-based)</td><td><code>Error::Timeout</code></td><td>Grab one matching line, kill the rest</td></tr>
+<tr><td><code>start()</code></td><td>live <code>RunningProcess</code></td><td>—</td><td>bounds the stream</td><td><a href="streaming.html">Streaming, interactive I/O, probes</a></td></tr>
+</tbody></table>
+</div>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+// probe(): the exit code as a boolean.
+let clean = Command::new("git").args(["diff", "--quiet"]).probe().await?;
+
+// first_line(): stop as soon as the interesting line appears.
+let first_match = Command::new("git")
+    .args(["log", "--oneline"])
+    .first_line(|l| l.contains("fix:"))
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p><code>first_line</code> returns <code>Ok(None)</code> when stdout closes without a match, and kills
+the (private-group) child once it has its answer — you never wait out a long
+log for one line. If the command's <a href="timeouts-and-cancellation.html"><code>cancel_on</code></a>
+token has fired, it returns <code>Error::Cancelled</code> instead of <code>Ok(None)</code>, so a
+readiness probe with a shutdown token can't misread cancellation as "the line
+never appeared".</p>
+<h2 id="results-and-errors"><a class="header" href="#results-and-errors">Results and errors</a></h2>
+<p>The capturing verbs hand back a <code>ProcessResult</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+let result = Command::new("git").args(["merge", "feature"]).output_string().await?;
+
+result.code();         // Option&lt;i32&gt; — None = killed (timeout/signal), no code
+result.signal();       // Option&lt;i32&gt; — the signal number (Unix), else None
+result.is_success();   // code in ok_codes (default {0})
+result.timed_out();    // the run's own deadline expired
+result.outcome();      // the explicit three-way enum behind the accessors above
+result.stdout();       // &amp;str (or &amp;[u8] from output_bytes)
+result.stderr();       // &amp;str
+result.combined();     // stdout + stderr concatenated
+result.diagnostic();   // stderr if non-empty, else stdout — the human-facing line
+                       // (git/jj put "CONFLICT …" on stdout!)
+
+// Opt into erroring whenever you're ready:
+let ok = result.ensure_success()?; // Exit / Timeout / Signalled (signal-kill) as typed errors
+<span class="boring">}</span></code></pre></pre>
+<p>When the three-way distinction matters, match on <code>Outcome</code> instead of
+mentally decoding the <code>code()</code>/<code>timed_out()</code> pair:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Outcome;
+
+match result.outcome() {
+    Outcome::Exited(0) =&gt; println!("clean"),
+    Outcome::Exited(code) =&gt; println!("failed with {code}"),
+    Outcome::Signalled(signal) =&gt; println!("killed by signal {signal:?}"),
+    Outcome::TimedOut =&gt; println!("hit its deadline"),
+    _ =&gt; {} // non_exhaustive: future dispositions
+}
+<span class="boring">}</span></code></pre></pre>
+<p>For a single query you usually don't need the <code>match</code> (and its
+<code>#[non_exhaustive]</code> wildcard): <code>Outcome</code> carries the same <code>code()</code> /
+<code>signal()</code> / <code>timed_out()</code> accessors as <code>ProcessResult</code>, so a bare <code>Outcome</code>
+(from <code>RunningProcess::wait</code> or <code>Finished::outcome</code>) answers directly —
+<code>outcome.code()</code>, <code>outcome.signal()</code>, <code>outcome.timed_out()</code>. There is no
+<code>Outcome::is_success</code> (success is <code>ok_codes</code>-aware — use
+<code>ProcessResult::is_success</code>).</p>
+<p>The error enum is structured and <code>#[non_exhaustive]</code>:</p>
+<div class="table-wrapper"><table><thead><tr><th>Variant</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>Error::Spawn { program, source }</code></td><td>The program was located but the OS couldn't start it (permissions, a bad working directory, a Windows <code>.cmd</code>/<code>.bat</code> needing <code>cmd.exe</code>, …) — <strong>not</strong> <code>is_not_found()</code></td></tr>
+<tr><td><code>Error::NotFound { program, searched }</code></td><td>The program couldn't be located (the single "not found" representation — <code>is_not_found()</code> is true); <code>searched</code> is <code>Some(dirs)</code> for a bare-name <code>PATH</code> lookup, <code>None</code> otherwise</td></tr>
+<tr><td><code>Error::Exit { program, code, stdout, stderr }</code></td><td>Non-zero exit, both streams attached in full (the <code>Display</code> message is bounded, but the fields carry the complete captured text for classification)</td></tr>
+<tr><td><code>Error::Signalled { program, signal, stdout, stderr }</code></td><td>The process was killed by a signal (no exit code); <code>signal</code> carries the number on Unix, <code>None</code> elsewhere; the partial streams captured before the kill are attached (reach them via <code>diagnostic()</code>)</td></tr>
+<tr><td><code>Error::OutputTooLarge { program, line_limit, byte_limit, total_lines, total_bytes }</code></td><td>A <code>fail_loud</code> buffer's line or byte ceiling was exceeded</td></tr>
+<tr><td><code>Error::Timeout { program, timeout, stdout, stderr }</code></td><td>The run's own deadline killed it; whatever the run captured before the kill is attached — a hung tool's last stderr line tails the <code>Display</code> and is reachable via <code>diagnostic()</code></td></tr>
+<tr><td><code>Error::NotReady { program, timeout }</code></td><td>A <a href="streaming.html#readiness-probes">readiness probe</a> gave up</td></tr>
+<tr><td><code>Error::Parse { program, message }</code></td><td>A <code>try_parse</code> parser (on <code>Command</code>, <code>ProcessRunnerExt</code>, <code>CliClient</code>, or <code>Pipeline</code>) rejected the output (the <code>Display</code>/<code>Debug</code> of <code>message</code> is bounded to a 200-byte preview; the field carries the full text)</td></tr>
+<tr><td><code>Error::Stdin { program, source }</code></td><td>Feeding the child's stdin failed for a non-broken-pipe reason on an <em>otherwise-successful</em> run (a louder failure — exit/signal/timeout — wins instead); a routine broken pipe never surfaces</td></tr>
+<tr><td><code>Error::CassetteMiss { program }</code></td><td>(<code>record</code> feature) a cassette replay found no matching recording (stale/incomplete cassette) — kept distinct from a missing program, so <code>is_not_found()</code> is <code>false</code></td></tr>
+<tr><td><code>Error::Unsupported { operation }</code></td><td>The platform can't do what was asked (and silently skipping would be wrong)</td></tr>
+<tr><td><code>Error::Cancelled { program }</code></td><td>the run's token was cancelled</td></tr>
+<tr><td><code>Error::ResourceLimit { message }</code></td><td>(<code>limits</code> feature) a requested cap couldn't be enforced</td></tr>
+<tr><td><code>Error::Io(source)</code></td><td>A low-level IO error from the crate's own machinery (driving a child, group control, cassette files) — never an arbitrary foreign <code>io::Error</code> (no blanket <code>From</code>, D13)</td></tr>
+</tbody></table>
+</div>
+<p><code>Error::diagnostic()</code> returns the most useful human-facing line out of a
+failure that captured output — <code>Exit</code>, and (D12) <code>Timeout</code> / <code>Signalled</code> (the
+partial streams of a hung-then-killed or crashed tool). Each of those variants'
+one-line <code>Display</code> also appends a bounded excerpt of that diagnostic (the last
+non-empty line, capped at 200 bytes), so a bare <code>eprintln!("{e}")</code> reads
+<code>`git` exited with code 2: fatal: boom</code> — actionable in a log line without
+dumping multi-KiB streams into it.</p>
+<hr />
+<p>Next: <a href="streaming.html">Streaming &amp; interactive I/O</a> ·
+<a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a> ·
+<a href="process-groups.html">Process groups</a></p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="cookbook.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="process-groups.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="cookbook.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="process-groups.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>

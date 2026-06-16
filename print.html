@@ -1,0 +1,2800 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ProcessKit</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="Async child-process management — Rust · Go · F# · Kotlin">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Overview</a></li><li class="chapter-item expanded affix "><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Rust</li><li class="chapter-item expanded "><a href="cookbook.html"><strong aria-hidden="true">1.</strong> Cookbook</a></li><li class="chapter-item expanded "><a href="commands.html"><strong aria-hidden="true">2.</strong> Running commands</a></li><li class="chapter-item expanded "><a href="process-groups.html"><strong aria-hidden="true">3.</strong> Process groups</a></li><li class="chapter-item expanded "><a href="streaming.html"><strong aria-hidden="true">4.</strong> Streaming & interactive I/O</a></li><li class="chapter-item expanded "><a href="pipelines.html"><strong aria-hidden="true">5.</strong> Pipelines</a></li><li class="chapter-item expanded "><a href="timeouts-and-cancellation.html"><strong aria-hidden="true">6.</strong> Timeouts, retries & cancellation</a></li><li class="chapter-item expanded "><a href="supervision.html"><strong aria-hidden="true">7.</strong> Supervision</a></li><li class="chapter-item expanded "><a href="testing.html"><strong aria-hidden="true">8.</strong> Testing your code</a></li><li class="chapter-item expanded "><a href="platform-support.html"><strong aria-hidden="true">9.</strong> Platform support</a></li><li class="chapter-item expanded "><a href="upgrading.html"><strong aria-hidden="true">10.</strong> Upgrading</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">ProcessKit</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/ZelAnton/ProcessKit" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="processkit--documentation"><a class="header" href="#processkit--documentation">processkit — documentation</a></h1>
+<p><code>processkit</code> is a child-process toolkit for Rust in two layers:</p>
+<pre><code class="language-text">┌─────────────────────────────────────────────────────────────────┐
+│  Runner layer (async, tokio)                                    │
+│  Command · RunningProcess · Pipeline · Supervisor · CliClient   │
+│  capture / streaming / interactive stdin / readiness probes     │
+│  testing seam: ProcessRunner → ScriptedRunner / RecordReplay…   │
+├─────────────────────────────────────────────────────────────────┤
+│  Group layer (kill-on-drop containment)                         │
+│  ProcessGroup: spawn / adopt / signal / suspend / members /     │
+│  stats / limits / shutdown                                      │
+├─────────────────────────────────────────────────────────────────┤
+│  OS mechanisms                                                  │
+│  Windows Job Object · Linux cgroup v2 · POSIX process group     │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<p>Every <code>Command</code> run gets containment for free: the one-shot helpers spawn into
+a fresh private group that dies with the run, so a panicking caller never
+leaks a process tree. The layers are also usable independently — a raw
+<code>ProcessGroup</code> can contain children you spawn yourself, and the runner's
+test doubles never touch the OS at all.</p>
+<h2 id="guides"><a class="header" href="#guides">Guides</a></h2>
+<p><strong>New to the crate?</strong> Start with the <a href="cookbook.html">Cookbook</a> — short
+task-to-snippet recipes for everything the crate does — then read
+<a href="commands.html">Running commands</a> end to end (it's the vocabulary every other
+guide builds on). Reach for the rest as the need arises, and keep
+<a href="platform-support.html">Platform support</a> handy before you ship: it collects
+every per-OS caveat in one place.</p>
+<div class="table-wrapper"><table><thead><tr><th>Guide</th><th>Covers</th></tr></thead><tbody>
+<tr><td><a href="cookbook.html">Cookbook</a></td><td>"I want to …" → working snippet, for every capability; each recipe links to its deep guide</td></tr>
+<tr><td><a href="commands.html">Running commands</a></td><td>The <code>Command</code> builder end to end: args, env, stdin sources, encodings, buffer policies, line handlers, timeouts, retry, privileges — and every consuming verb (<code>run</code>, <code>output_string</code>, <code>probe</code>, …) with its error semantics</td></tr>
+<tr><td><a href="process-groups.html">Process groups</a></td><td>Kill-on-drop containment: creating groups, spawning/adopting, teardown verbs, whole-tree signals, suspend/resume, member listing, resource limits, stats sampling</td></tr>
+<tr><td><a href="streaming.html">Streaming &amp; interactive I/O</a></td><td><code>start()</code> and the live <code>RunningProcess</code>: line streaming, interactive stdin, readiness probes (<code>wait_for_line</code> / <code>wait_for_port</code> / <code>wait_for</code>), racing children with <code>wait_any</code>, per-run profiling</td></tr>
+<tr><td><a href="pipelines.html">Pipelines</a></td><td><code>a | b | c</code> without a shell (the <code>|</code> operator works too): wiring, pipefail attribution, <code>unchecked_in_pipe()</code> stages for the <code>| head</code> pattern, timeouts, stdin/stdout at the ends, re-running chains</td></tr>
+<tr><td><a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a></td><td>How a deadline is <em>captured</em> vs when it errors, retry policies and their classifier, and cancellation: per-command tokens and the client-level <code>default_cancel_on</code></td></tr>
+<tr><td><a href="supervision.html">Supervision</a></td><td>Keeping a child alive: restart policies, backoff &amp; jitter math, the failure-storm guard, stop conditions, outcomes, supervising inside a shared group</td></tr>
+<tr><td><a href="testing.html">Testing your code</a></td><td>The <code>ProcessRunner</code> seam — bulk <strong>and</strong> streaming: <code>ScriptedRunner</code> (incl. scripted <code>start()</code> with canned, paced lines), <code>RecordingRunner</code>, <code>MockRunner</code>, record/replay cassettes, and building hermetically-testable CLI wrappers with <code>CliClient</code></td></tr>
+<tr><td><a href="platform-support.html">Platform support</a></td><td>The containment mechanisms, every per-feature support matrix in one place, and the platform caveats worth knowing before you ship</td></tr>
+<tr><td><a href="upgrading.html">Upgrading</a></td><td>Per-version consumer upgrade notes — what changed on each release and the exact change to make across a major bump</td></tr>
+</tbody></table>
+</div>
+<h2 id="feature-flags"><a class="header" href="#feature-flags">Feature flags</a></h2>
+<p>Every flag is <strong>additive</strong> and only gates <em>visibility</em> — the kill-on-drop tree
+guarantee is unconditional in every configuration.</p>
+<div class="table-wrapper"><table><thead><tr><th>Feature</th><th>Default</th><th>Adds</th><th>Extra dependency</th></tr></thead><tbody>
+<tr><td><code>stats</code></td><td>off</td><td><code>ProcessGroup::stats</code> / <code>sample_stats</code>, <code>RunningProcess::cpu_time</code> / <code>peak_memory_bytes</code> / <code>profile</code></td><td><code>windows-sys/ProcessStatus</code> (Windows)</td></tr>
+<tr><td><code>process-control</code></td><td><strong>on</strong></td><td><code>Signal</code>, <code>ProcessGroup::{signal, suspend, resume, members, adopt}</code></td><td>—</td></tr>
+<tr><td><code>limits</code></td><td>off</td><td>Whole-tree resource caps on <code>ProcessGroupOptions</code> (<code>memory_max</code> / <code>max_processes</code> / <code>cpu_quota</code>), <code>Error::ResourceLimit</code>; implies <code>stats</code></td><td>—</td></tr>
+<tr><td><code>mock</code></td><td>off</td><td>A <code>mockall</code>-generated <code>MockRunner</code> for expectation-style tests (test-only; its <code>expect_*</code> surface is <strong>semver-exempt</strong>, tracking <code>mockall</code> — prefer <code>ScriptedRunner</code>/<code>RecordingRunner</code> for a stable double)</td><td><code>mockall</code></td></tr>
+<tr><td><code>tracing</code></td><td>off</td><td>Events on the <code>processkit</code> target: spawn/exit, timeout &amp; cancel firing, group teardown, retries, supervisor storms, teardown anomalies (never argv/env)</td><td><code>tracing</code></td></tr>
+<tr><td><code>record</code></td><td>off</td><td><code>RecordReplayRunner</code> JSON cassettes over the runner seam</td><td><code>serde</code>, <code>serde_json</code></td></tr>
+</tbody></table>
+</div>
+<pre><code class="language-toml">[dependencies]
+processkit = { version = "…", features = ["limits"] }
+</code></pre>
+<h2 id="the-60-second-tour"><a class="header" href="#the-60-second-tour">The 60-second tour</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::{Command, ProcessGroup, Stdin};
+
+#[tokio::main]
+async fn main() -&gt; processkit::Result&lt;()&gt; {
+    // One-shot: capture everything. A non-zero exit is data, not an Err.
+    let head = Command::new("git").args(["rev-parse", "HEAD"]).output_string().await?;
+    println!("HEAD = {}", head.stdout().trim());
+
+    // Success-checking: non-zero exit / timeout / signal-kill become typed errors.
+    let version = Command::new("cargo").arg("--version").run().await?;
+
+    // Stdin, timeout, streaming, pipelines, supervision … see the guides.
+    let sorted = Command::new("sort")
+        .stdin(Stdin::from_string("b\na\n"))
+        .timeout(std::time::Duration::from_secs(5))
+        .run()
+        .await?;
+
+    // Containment: anything spawned through a group dies with it.
+    let group = ProcessGroup::new()?;
+    let _server = group.start(&amp;Command::new("dev-server")).await?;
+    drop(group); // the server — and everything *it* spawned — is reaped
+
+    let _ = (version, sorted);
+    Ok(())
+}</code></pre></pre>
+<h2 id="api-reference"><a class="header" href="#api-reference">API reference</a></h2>
+<p>The rustdoc on <a href="https://docs.rs/processkit">docs.rs</a> is the authoritative
+per-item reference; these guides are the narrative layer on top — they explain
+how the pieces compose, with the platform fine print collected in
+<a href="platform-support.html">Platform support</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="cookbook"><a class="header" href="#cookbook">Cookbook</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p>Task-oriented recipes: find the thing you're trying to do, copy the snippet,
+follow the link when you need the fine print. Every snippet assumes a tokio
+runtime and <code>use processkit::Command;</code> unless shown otherwise.</p>
+<ul>
+<li><a href="cookbook.html#run-a-command-and-get-its-output">Run a command and get its output</a></li>
+<li><a href="cookbook.html#inspect-a-failure-instead-of-erroring">Inspect a failure instead of erroring</a></li>
+<li><a href="cookbook.html#ask-a-yesno-question">Ask a yes/no question</a></li>
+<li><a href="cookbook.html#accept-non-zero-exit-codes-as-success">Accept non-zero exit codes as success</a></li>
+<li><a href="cookbook.html#bound-a-run-with-a-timeout">Bound a run with a timeout</a></li>
+<li><a href="cookbook.html#let-a-tool-clean-up-on-timeout">Let a tool clean up on timeout</a></li>
+<li><a href="cookbook.html#show-a-useful-error-message">Show a useful error message</a></li>
+<li><a href="cookbook.html#feed-the-childs-stdin">Feed the child's stdin</a></li>
+<li><a href="cookbook.html#stream-output-as-it-arrives">Stream output as it arrives</a></li>
+<li><a href="cookbook.html#talk-to-an-interactive-child">Talk to an interactive child</a></li>
+<li><a href="cookbook.html#pipe-commands-without-a-shell">Pipe commands without a shell</a></li>
+<li><a href="cookbook.html#start-a-server-and-wait-until-its-ready">Start a server and wait until it's ready</a></li>
+<li><a href="cookbook.html#tear-down-several-children-as-a-unit">Tear down several children as a unit</a></li>
+<li><a href="cookbook.html#react-to-whichever-child-exits-first">React to whichever child exits first</a></li>
+<li><a href="cookbook.html#sandbox-an-untrusted-tool">Sandbox an untrusted tool</a></li>
+<li><a href="cookbook.html#keep-a-crash-prone-service-running">Keep a crash-prone service running</a></li>
+<li><a href="cookbook.html#retry-a-flaky-command">Retry a flaky command</a></li>
+<li><a href="cookbook.html#cancel-runs-on-shutdown">Cancel runs on shutdown</a></li>
+<li><a href="cookbook.html#measure-what-a-run-cost">Measure what a run cost</a></li>
+<li><a href="cookbook.html#contain-a-process-you-didnt-spawn">Contain a process you didn't spawn</a></li>
+<li><a href="cookbook.html#test-code-that-runs-processes--without-processes">Test code that runs processes — without processes</a></li>
+<li><a href="cookbook.html#test-streaming-code--without-processes">Test streaming code — without processes</a></li>
+<li><a href="cookbook.html#wrap-a-cli-tool-behind-a-typed-api">Wrap a CLI tool behind a typed API</a></li>
+</ul>
+<h2 id="run-a-command-and-get-its-output"><a class="header" href="#run-a-command-and-get-its-output">Run a command and get its output</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let head = Command::new("git").args(["rev-parse", "HEAD"]).run().await?;
+<span class="boring">}</span></code></pre></pre>
+<p><code>run()</code> requires a zero exit and returns stdout with trailing whitespace
+trimmed; a non-zero exit, spawn failure, or timeout is a typed <code>Error</code>. For a
+one-liner without the builder: <code>processkit::run("git", ["rev-parse", "HEAD"])</code>.</p>
+<p><em>Fine print: <a href="commands.html#consuming-verbs">Running commands → consuming verbs</a>.</em></p>
+<h2 id="inspect-a-failure-instead-of-erroring"><a class="header" href="#inspect-a-failure-instead-of-erroring">Inspect a failure instead of erroring</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let result = Command::new("git").args(["merge", "topic"]).output_string().await?;
+if !result.is_success() {
+    eprintln!("merge exited {:?}: {}", result.code(), result.stderr());
+}
+<span class="boring">}</span></code></pre></pre>
+<p><code>output_string()</code> (and <code>output_bytes()</code> for raw bytes) treats the exit code as
+data — <code>Err</code> means the run couldn't happen at all. Call
+<code>result.ensure_success()?</code> later to convert a stored failure into the same
+typed error <code>run()</code> would have produced.</p>
+<p><em>Fine print: <a href="commands.html#results-and-errors">Running commands → results and errors</a>.</em></p>
+<h2 id="ask-a-yesno-question"><a class="header" href="#ask-a-yesno-question">Ask a yes/no question</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let dirty = !Command::new("git").args(["diff", "--quiet"]).probe().await?;
+<span class="boring">}</span></code></pre></pre>
+<p><code>probe()</code> maps exit 0 → <code>true</code>, exit 1 → <code>false</code>, and anything else to an
+error — the <code>git diff --quiet</code> / <code>grep -q</code> convention without manual code
+matching.</p>
+<h2 id="accept-non-zero-exit-codes-as-success"><a class="header" href="#accept-non-zero-exit-codes-as-success">Accept non-zero exit codes as success</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// `grep` exits 1 when it finds no match — not a failure for this call.
+let found = Command::new("grep")
+    .args(["needle", "haystack.txt"])
+    .ok_codes([0, 1])
+    .output_string()
+    .await?;
+let matched = found.code() == Some(0); // 0 = matched, 1 = no match (both "success")
+<span class="boring">}</span></code></pre></pre>
+<p><code>ok_codes</code> widens what the checking verbs (<code>run</code>/<code>run_unit</code>) and
+<code>is_success</code>/<code>ensure_success</code> treat as success — for tools whose non-zero exit is a
+normal result (<code>grep</code> 1 = no match, <code>diff</code> 1 = differs, rsync's code families). It
+does <strong>not</strong> change <code>exit_code</code> (always the raw code) or <code>probe</code> (always the 0/1
+convention). An empty set is ignored, so the default stays exit <code>0</code>.</p>
+<h2 id="bound-a-run-with-a-timeout"><a class="header" href="#bound-a-run-with-a-timeout">Bound a run with a timeout</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::time::Duration;
+
+let result = Command::new("slow-tool")
+    .timeout(Duration::from_secs(30))
+    .output_string()
+    .await?;
+if result.timed_out() {
+    eprintln!("gave up after 30s; partial output: {}", result.stdout());
+}
+<span class="boring">}</span></code></pre></pre>
+<p>At the deadline the whole tree is killed. On the capture verbs the timeout is
+<em>captured</em> (<code>timed_out()</code>, partial output kept); on the success-checking verbs
+(<code>run</code>, <code>exit_code</code>) it surfaces as <code>Error::Timeout</code>.</p>
+<h2 id="let-a-tool-clean-up-on-timeout"><a class="header" href="#let-a-tool-clean-up-on-timeout">Let a tool clean up on timeout</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::time::Duration;
+
+let result = Command::new("dev-server")
+    .timeout(Duration::from_secs(30))
+    .timeout_grace(Duration::from_secs(5)) // SIGTERM, wait up to 5s, then SIGKILL
+    .output_string()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p><code>timeout_grace</code> turns the hard deadline kill into a graceful one: <code>SIGTERM</code> (or the
+signal from <code>timeout_signal</code>, with the <code>process-control</code> feature), up to the grace
+window to exit, then <code>SIGKILL</code>. A signal-handling child exits early; <code>timed_out()</code>
+stays <code>true</code>. Windows has no signal tier — the deadline kills atomically.</p>
+<p><em>Fine print: <a href="timeouts-and-cancellation.html#graceful-timeout">Timeouts → graceful timeout</a>.</em></p>
+<p><em>Fine print: <a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a>.</em></p>
+<h2 id="show-a-useful-error-message"><a class="header" href="#show-a-useful-error-message">Show a useful error message</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>if let Err(e) = Command::new("git").args(["merge", "topic"]).run().await {
+    eprintln!("merge failed: {}", e.diagnostic().unwrap_or("(no output)"));
+}
+<span class="boring">}</span></code></pre></pre>
+<p><code>Error::diagnostic()</code> picks the most explanatory captured text — stderr,
+falling back to stdout (git writes <code>CONFLICT …</code> there) — so callers don't
+re-implement the same heuristic.</p>
+<h2 id="feed-the-childs-stdin"><a class="header" href="#feed-the-childs-stdin">Feed the child's stdin</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Stdin;
+
+// A string you already have:
+let sorted = Command::new("sort")
+    .stdin(Stdin::from_string("banana\napple\n"))
+    .run()
+    .await?;
+
+// …or any async source: a reader (file, socket) or a stream of lines.
+let from_file = Stdin::from_reader(tokio::fs::File::open("input.txt").await?);
+let from_chan = Stdin::from_lines(tokio_stream::iter(vec!["one".to_owned()]));
+<span class="boring">}</span></code></pre></pre>
+<p>One-shot sources (<code>from_reader</code>/<code>from_lines</code>) feed a single run; re-running the
+same <code>Command</code> afterwards <strong>fails loud</strong> (an <code>Error::Io</code> at launch, D10) instead
+of silently seeing empty stdin. For a conversation, see the next recipe but one.</p>
+<p><em>Fine print: <a href="commands.html#standard-input">Running commands → standard input</a>.</em></p>
+<h2 id="stream-output-as-it-arrives"><a class="header" href="#stream-output-as-it-arrives">Stream output as it arrives</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{StreamExt, Finished}; // StreamExt re-exported; provides `.next()`
+
+let mut run = Command::new("cargo").args(["build", "--verbose"]).start().await?;
+let mut lines = run.stdout_lines()?;
+while let Some(line) = lines.next().await {
+    println!("build: {line}");
+}
+let Finished { outcome, stderr, .. } = run.finish().await?; // outcome + buffered stderr
+<span class="boring">}</span></code></pre></pre>
+<p>No waiting for exit, no full-output buffering; stderr is drained in the
+background so the child can't block. A <code>timeout</code> on the command bounds the
+stream itself. Prefer a callback? <code>.on_stdout_line(|l| …)</code> runs one per line
+while any capture verb drives the run.</p>
+<p><em>Fine print: <a href="streaming.html">Streaming &amp; interactive I/O</a>.</em></p>
+<h2 id="talk-to-an-interactive-child"><a class="header" href="#talk-to-an-interactive-child">Talk to an interactive child</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::StreamExt;
+
+let mut run = Command::new("bc").keep_stdin_open().start().await?;
+let mut stdin = run.take_stdin().expect("stdin was kept open");
+stdin.write_line("2 + 2").await?;
+stdin.finish().await?; // EOF — bc exits
+
+let mut answers = run.stdout_lines()?;
+while let Some(answer) = answers.next().await {
+    println!("{answer}");
+}
+<span class="boring">}</span></code></pre></pre>
+<p><code>keep_stdin_open()</code> hands you an async writer instead of closing stdin at
+spawn; interleave writes with reads for request/response tools. Its writer
+methods return <code>std::io::Result</code> (idiomatic for a writer) — convert with
+<code>.map_err(processkit::Error::Io)?</code> in a <code>processkit::Result</code> function, or use
+<code>Box&lt;dyn std::error::Error&gt;</code>.</p>
+<p><em>Fine print: <a href="streaming.html">Streaming &amp; interactive I/O → interactive stdin</a>.</em></p>
+<h2 id="pipe-commands-without-a-shell"><a class="header" href="#pipe-commands-without-a-shell">Pipe commands without a shell</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let authors = Command::new("git").args(["log", "--format=%an"])
+    .pipe(Command::new("sort"))
+    .pipe(Command::new("uniq").arg("-c"))
+    .output_string()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p>Native pipes — no shell string, no quoting, no injection surface. The outcome
+is <strong>pipefail</strong>: stdout comes from the last stage, the reported failure from
+the first stage that didn't exit cleanly. All stages share one kill-on-drop
+group. The <code>|</code> operator is equivalent sugar:
+<code>(a | b | c).output_string()</code>.</p>
+<p>For a consumer that legitimately stops reading early — the <code>| head -1</code> shape,
+where the producer's broken-pipe death (its next write fails once the downstream
+closes, or <code>SIGPIPE</code> where the OS delivers it) is expected — mark the producer
+<code>unchecked_in_pipe()</code> so that death doesn't fail the chain:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let first = (Command::new("seq").args(["1", "1000000"]).unchecked_in_pipe()
+    | Command::new("head").args(["-n", "1"]))
+    .run()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p><em>Fine print: <a href="pipelines.html#unchecked-stages">Pipelines → unchecked stages</a>.</em></p>
+<h2 id="start-a-server-and-wait-until-its-ready"><a class="header" href="#start-a-server-and-wait-until-its-ready">Start a server and wait until it's ready</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::time::Duration;
+
+let mut server = Command::new("my-server").args(["--port", "8080"]).start().await?;
+
+// Pick the probe that matches how the server announces readiness:
+server.wait_for_line(|l| l.contains("listening"), Duration::from_secs(10)).await?;
+// server.wait_for_port("127.0.0.1:8080".parse().unwrap(), Duration::from_secs(10)).await?;
+// server.wait_for(|| async { http_health().await }, Duration::from_secs(10)).await?;
+
+// …use the server; dropping `server` kills its whole tree.
+<span class="boring">}</span></code></pre></pre>
+<p>A probe that can't succeed fails fast with <code>Error::NotReady</code> and never kills
+the child — you decide what happens next. No more <code>sleep(2)</code> and hoping.</p>
+<p><em>Fine print: <a href="streaming.html">Streaming &amp; interactive I/O → readiness probes</a>.</em></p>
+<h2 id="tear-down-several-children-as-a-unit"><a class="header" href="#tear-down-several-children-as-a-unit">Tear down several children as a unit</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::ProcessGroup;
+
+let group = ProcessGroup::new()?;
+let _db = group.start(&amp;Command::new("dev-db")).await?;
+let _api = group.start(&amp;Command::new("dev-api")).await?;
+
+// Either: graceful — SIGTERM, bounded wait, optional SIGKILL escalation…
+group.shutdown().await?;
+// …or just drop(group): hard kill-on-drop of everything, grandchildren included.
+<span class="boring">}</span></code></pre></pre>
+<p>The group is the unit of fate: a panic or early return anywhere reaps every
+member. Configure the grace window via <code>ProcessGroupOptions</code>.</p>
+<p><em>Fine print: <a href="process-groups.html">Process groups</a>.</em></p>
+<h2 id="react-to-whichever-child-exits-first"><a class="header" href="#react-to-whichever-child-exits-first">React to whichever child exits first</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{ProcessGroup, wait_any};
+
+let group = ProcessGroup::new()?;
+let mut a = group.start(&amp;Command::new("worker-a")).await?;
+let mut b = group.start(&amp;Command::new("worker-b")).await?;
+
+let (idx, outcome) = wait_any(&amp;mut [&amp;mut a, &amp;mut b]).await?;
+println!("worker #{idx} exited first with {outcome:?}");
+// `a` and `b` are only borrowed — the loser is still usable here.
+<span class="boring">}</span></code></pre></pre>
+<p><em>Fine print: <a href="streaming.html">Streaming &amp; interactive I/O → racing children</a>.</em></p>
+<h2 id="sandbox-an-untrusted-tool"><a class="header" href="#sandbox-an-untrusted-tool">Sandbox an untrusted tool</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{ProcessGroup, ProcessGroupOptions};
+
+// Cap the whole tree (requires the `limits` feature; Windows Job / Linux cgroup):
+let group = ProcessGroup::with_options(
+    ProcessGroupOptions::default()
+        .memory_max(512 * 1024 * 1024)
+        .max_processes(64)
+        .cpu_quota(0.5),
+)?;
+
+let result = group
+    .start(
+        &amp;Command::new("untrusted-tool")
+            .inherit_env(["PATH"]) // allow-list: everything else is cleared
+            .timeout(std::time::Duration::from_secs(60)),
+    )
+    .await?
+    .output_string()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p>Unenforceable limits are a hard <code>Error::ResourceLimit</code>, never a silently
+unbounded group. On Unix, add <code>.uid(…)</code>/<code>.gid(…)</code> to drop privileges (note the
+cgroup-mechanism caveat in the guide).</p>
+<p><em>Fine print: <a href="process-groups.html#resource-limits">Process groups → resource limits</a> ·
+<a href="commands.html#privileges-and-spawn-flags">Running commands → privileges</a>.</em></p>
+<h2 id="keep-a-crash-prone-service-running"><a class="header" href="#keep-a-crash-prone-service-running">Keep a crash-prone service running</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{RestartPolicy, Supervisor};
+use std::time::Duration;
+
+let outcome = Supervisor::new(Command::new("my-service"))
+    .restart(RestartPolicy::OnCrash)
+    .max_restarts(5)
+    .backoff(Duration::from_millis(200), 2.0)
+    .storm_pause(Duration::from_secs(15)) // crash-loop guard (off by default)
+    .run()
+    .await?;
+println!(
+    "stopped after {} restarts ({} storm pauses): {:?}",
+    outcome.restarts, outcome.storm_pauses, outcome.stopped
+);
+<span class="boring">}</span></code></pre></pre>
+<p>Exponential backoff with jitter by default; <code>stop_when(…)</code> ends supervision on
+a condition; <code>.with_runner(&amp;group)</code> keeps every incarnation inside one shared
+kill-on-drop group. <code>storm_pause</code> arms the failure-storm guard: failures feed
+a decaying score, and past the threshold the supervisor takes one collective
+pause instead of hammering restarts — "fails rarely" and "crash-looping" stop
+being the same case.</p>
+<p><em>Fine print: <a href="supervision.html">Supervision</a>, <a href="supervision.html#failure-storms">failure storms</a>.</em></p>
+<h2 id="retry-a-flaky-command"><a class="header" href="#retry-a-flaky-command">Retry a flaky command</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Error;
+use std::time::Duration;
+
+let fetched = Command::new("git")
+    .args(["fetch", "--quiet"])
+    .timeout(Duration::from_secs(10))
+    .retry(3, Duration::from_millis(200), |e| {
+        matches!(e, Error::Timeout { .. })
+            || e.diagnostic().is_some_and(|m| m.contains("Could not resolve host"))
+    })
+    .run()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p>The classifier sees the typed error and decides whether this failure is worth
+another attempt; each attempt is a fresh process. <code>retry</code> replays a run to
+success — for keeping a process <em>alive</em>, use a <code>Supervisor</code> (previous recipe).</p>
+<p><em>Fine print: <a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation → retry</a>.</em></p>
+<h2 id="cancel-runs-on-shutdown"><a class="header" href="#cancel-runs-on-shutdown">Cancel runs on shutdown</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::CancellationToken;
+
+let token = CancellationToken::new();
+
+let job = tokio::spawn({
+    let token = token.child_token();
+    async move { Command::new("long-job").cancel_on(token).run().await }
+});
+
+// On Ctrl-C / shutdown signal / sibling failure:
+token.cancel(); // kills the tree; the run resolves to Error::Cancelled
+let outcome = job.await; // Err(Error::Cancelled { .. }) inside
+<span class="boring">}</span></code></pre></pre>
+<p>Cancellation is always an error (the run was abandoned, there is no result),
+beats a simultaneous timeout, and is terminal for <code>retry</code> and <code>Supervisor</code>
+alike.</p>
+<p>For a typed wrapper whose commands never cross your code, set the token once
+on the client — every command it builds carries it:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{CancellationToken, CliClient};
+
+let token = CancellationToken::new();
+let gh = CliClient::new("gh").default_cancel_on(token.child_token());
+// token.cancel() → every in-flight command of THIS client dies.
+<span class="boring">}</span></code></pre></pre>
+<p><em>Fine print: <a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation → cancellation</a>, <a href="timeouts-and-cancellation.html#client-level-default">client-level default</a>.</em></p>
+<h2 id="measure-what-a-run-cost"><a class="header" href="#measure-what-a-run-cost">Measure what a run cost</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use std::time::Duration;
+
+// One run, summarized (requires the opt-in `stats` feature):
+let profile = Command::new("crunch").start().await?.profile(Duration::from_millis(100)).await?;
+println!("exit={:?} took={:?} peak_rss={:?} avg_cpu={:?}",
+    profile.exit_code, profile.duration, profile.peak_memory_bytes, profile.avg_cpu());
+<span class="boring">}</span></code></pre></pre>
+<p>For a live series over a whole group, <code>group.sample_stats(every)</code> yields a
+<code>Stream</code> of snapshots. CPU/memory need a real container (Windows Job / Linux
+cgroup); elsewhere you still get process counts.</p>
+<p><em>Fine print: <a href="process-groups.html#stats-and-sampling">Process groups → stats</a> ·
+<a href="streaming.html#per-run-telemetry">Streaming → profiling</a>.</em></p>
+<h2 id="contain-a-process-you-didnt-spawn"><a class="header" href="#contain-a-process-you-didnt-spawn">Contain a process you didn't spawn</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::ProcessGroup;
+
+let child = tokio::process::Command::new("legacy-launcher").spawn()?;
+
+let group = ProcessGroup::new()?; // `adopt` is part of `process-control` (default-on)
+group.adopt(&amp;child)?;            // from now on the group's teardown covers it
+<span class="boring">}</span></code></pre></pre>
+<p>Adoption is best-effort by mechanism — on Windows/cgroup the whole running
+tree joins; on the POSIX process-group backends an exec'd child is contained
+individually (its <em>future</em> forks too, where it could be re-grouped). The guide
+spells out exactly what each mechanism can promise.</p>
+<p><em>Fine print: <a href="process-groups.html#putting-processes-in">Process groups → adopt</a> ·
+<a href="platform-support.html">Platform support</a>.</em></p>
+<h2 id="test-code-that-runs-processes--without-processes"><a class="header" href="#test-code-that-runs-processes--without-processes">Test code that runs processes — without processes</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::testing::{Reply, ScriptedRunner};
+
+// Your code takes any `R: ProcessRunner`; in tests, hand it a script.
+// Rules match on a prefix of the *program name followed by its arguments*
+// (the first element is the program):
+let runner = ScriptedRunner::new()
+    .on(["git", "rev-parse"], Reply::ok("abc123\n"))
+    .on(["git", "push"], Reply::fail(128, "remote: permission denied"))
+    .fallback(Reply::ok(""));
+
+// my_deploy(&amp;runner).await? — no subprocess, fully deterministic.
+<span class="boring">}</span></code></pre></pre>
+<p><code>RecordingRunner</code> wraps any runner and captures every <code>Invocation</code> for
+assertions; <code>MockRunner</code> (feature <code>mock</code>) gives <code>mockall</code> expectations; and
+the <code>record</code> feature's <code>RecordReplayRunner</code> records real runs into a JSON
+cassette once and replays them hermetically in CI.</p>
+<p><em>Fine print: <a href="testing.html">Testing your code</a>.</em></p>
+<h2 id="test-streaming-code--without-processes"><a class="header" href="#test-streaming-code--without-processes">Test streaming code — without processes</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, Outcome, ProcessRunner, Finished};
+use processkit::testing::{Reply, ScriptedRunner};
+use std::time::Duration;
+
+let runner = ScriptedRunner::new()
+    .on(["gh", "run", "watch"], Reply::lines(["queued", "in_progress", "completed"])
+        .with_line_delay(Duration::from_millis(50))); // paced delivery
+
+let mut run = runner.start(&amp;Command::new("gh").args(["run", "watch", "123"])).await?;
+run.wait_for_line(|l| l.contains("completed"), Duration::from_secs(5)).await?;
+let Finished { outcome, .. } = run.finish().await?;
+assert_eq!(outcome, Outcome::Exited(0));
+<span class="boring">}</span></code></pre></pre>
+<p>A scripted <code>start()</code> feeds the canned lines through the <strong>same pump
+machinery</strong> a real child uses, so <code>stdout_lines</code>, the readiness probes, and
+<code>finish</code> behave identically — and <code>with_line_delay</code> is deterministic
+under <code>#[tokio::test(start_paused = true)]</code>. Canned output also replays
+through <code>on_stdout_line</code>/<code>on_stderr_line</code> handlers on the bulk verbs, so
+progress-reporting paths test hermetically too.</p>
+<p><em>Fine print: <a href="testing.html#scripted-streaming">Testing → scripted streaming</a>.</em></p>
+<h2 id="wrap-a-cli-tool-behind-a-typed-api"><a class="header" href="#wrap-a-cli-tool-behind-a-typed-api">Wrap a CLI tool behind a typed API</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{cli_client, ProcessRunner, Result};
+
+cli_client!(pub struct Git =&gt; "git");
+
+impl&lt;R: ProcessRunner&gt; Git&lt;R&gt; {
+    pub async fn current_branch(&amp;self) -&gt; Result&lt;String&gt; {
+        // A verb takes the args directly (D7); pass a built `command(..)` only
+        // when you need to customize it (per-call timeout, stdin, …).
+        self.core.run(["branch", "--show-current"]).await
+    }
+    pub async fn is_clean(&amp;self) -&gt; Result&lt;bool&gt; {
+        self.core.probe(["diff", "--quiet"]).await
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The generated struct carries a runner and per-client defaults
+(<code>default_timeout</code>, <code>default_env</code>); your methods are just argument lists and
+parsers — and because the runner is injectable, the whole wrapper is testable
+with the previous recipe's <code>ScriptedRunner</code>.</p>
+<p><em>Fine print: <a href="testing.html">Testing your code → CliClient</a>.</em></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="running-commands"><a class="header" href="#running-commands">Running commands</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p><code>Command</code> is the entry point of the runner layer: a builder describing <em>what</em>
+to run and <em>how</em>, plus a family of consuming verbs that decide <em>what you get
+back</em>. Every one-shot verb spawns the child into a fresh, private kill-on-drop
+<a href="process-groups.html">process group</a>, so an early return, panic, or dropped
+future can never leak a process tree.</p>
+<ul>
+<li><a href="commands.html#program-arguments-working-directory">Program, arguments, working directory</a></li>
+<li><a href="commands.html#environment">Environment</a></li>
+<li><a href="commands.html#standard-input">Standard input</a></li>
+<li><a href="commands.html#output-handling">Output handling</a></li>
+<li><a href="commands.html#timeouts-and-retries">Timeouts and retries</a></li>
+<li><a href="commands.html#privileges-and-spawn-flags">Privileges and spawn flags</a></li>
+<li><a href="commands.html#consuming-verbs">Consuming verbs</a></li>
+<li><a href="commands.html#results-and-errors">Results and errors</a></li>
+</ul>
+<h2 id="program-arguments-working-directory"><a class="header" href="#program-arguments-working-directory">Program, arguments, working directory</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+let out = Command::new("git")
+    .arg("log")                          // one at a time…
+    .args(["--oneline", "-n", "10"])     // …or in bulk
+    .current_dir("/path/to/repo")        // run there
+    .run()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p>Arguments are passed as an array — there is <strong>no shell</strong> between you and the
+child, so there is no quoting, no word-splitting, and no injection surface.
+(When you actually want <code>a | b | c</code>, use a <a href="pipelines.html">pipeline</a>, which
+connects the stages in-process instead of invoking a shell.)</p>
+<p>The program name reaches the OS <strong>verbatim</strong> — two deliberate non-goals
+(conveniences some libraries layer on, e.g. <code>duct</code>): a bare name is resolved
+on <code>PATH</code> by the OS, never rewritten to <code>./name</code>; and <code>current_dir</code> does not
+re-anchor a <em>relative</em> program path against the new directory — whether
+<code>Command::new("./tool").current_dir(dir)</code> resolves <code>tool</code> relative to <code>dir</code>
+is the platform's behavior (Unix: yes; Windows: the parent's directory may
+win). Pass absolute program paths when combining the two.</p>
+<p>For quick one-liners the free functions skip the builder:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let version = processkit::run("cargo", ["--version"]).await?;       // trimmed stdout, success required
+let result  = processkit::output_string("git", ["status", "-s"]).await?;   // full ProcessResult
+<span class="boring">}</span></code></pre></pre>
+<h2 id="environment"><a class="header" href="#environment">Environment</a></h2>
+<p>Four builders compose, applied in a fixed order at spawn:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+Command::new("worker")
+    .env("RUST_LOG", "debug")        // set one variable
+    .env_remove("GIT_DIR")           // unset one inherited variable
+    .run().await?;
+
+// Allow-list mode: clear everything, copy only the named parent variables.
+Command::new("sandboxed-tool")
+    .inherit_env(["PATH", "HOME", "LANG"])
+    .env("MODE", "ci")               // explicit env/env_remove still apply on top
+    .run().await?;
+
+// Scorched earth: the child starts with an empty environment.
+Command::new("hermetic-tool").env_clear().run().await?;
+<span class="boring">}</span></code></pre></pre>
+<p><code>inherit_env</code> is the sandboxing middle ground: it implies <code>env_clear</code>, then
+copies the listed variables <em>from the parent at each spawn</em> (so a retry sees
+fresh values), and repeated calls accumulate names. A name the parent doesn't
+have is skipped, not set to empty.</p>
+<h2 id="standard-input"><a class="header" href="#standard-input">Standard input</a></h2>
+<p>By default stdin is <strong>closed at spawn</strong> — the child reads EOF immediately and
+can never hang waiting for input. Everything else is opt-in via
+<code>stdin(Stdin::…)</code>:</p>
+<div class="table-wrapper"><table><thead><tr><th>Source</th><th>Reusable on re-run?</th><th>Use for</th></tr></thead><tbody>
+<tr><td><code>Stdin::empty()</code></td><td>—</td><td>The default, explicit</td></tr>
+<tr><td><code>Stdin::from_string("…")</code></td><td>✅</td><td>Text payloads</td></tr>
+<tr><td><code>Stdin::from_bytes(vec![…])</code></td><td>✅</td><td>Binary payloads</td></tr>
+<tr><td><code>Stdin::from_iter_lines(["a", "b"])</code></td><td>✅</td><td>Anything iterable; each item is written <code>\n</code>-terminated</td></tr>
+<tr><td><code>Stdin::from_file(path)</code></td><td>✅ (re-opened per run)</td><td>Large inputs streamed from disk</td></tr>
+<tr><td><code>Stdin::from_reader(reader)</code></td><td>❌ one-shot</td><td>Any <code>AsyncRead</code> — a socket, a decompressor, …</td></tr>
+<tr><td><code>Stdin::from_lines(stream)</code></td><td>❌ one-shot</td><td>Any <code>Stream&lt;Item = String&gt;</code> — a channel, a tail, …</td></tr>
+</tbody></table>
+</div>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, Stdin};
+
+let sorted = Command::new("sort")
+    .stdin(Stdin::from_iter_lines(["banana", "apple", "cherry"]))
+    .run()
+    .await?;
+assert_eq!(sorted, "apple\nbanana\ncherry");
+<span class="boring">}</span></code></pre></pre>
+<p>The payload is written on a background task (so a large input can't deadlock
+against the child's output) and the pipe is dropped afterwards to signal EOF.
+The two <em>one-shot</em> sources are consumed by their first run: a retried or
+cloned command reusing them <strong>fails loud</strong> the second time — re-running a
+consumed <code>from_reader</code>/<code>from_lines</code> source is an <code>Error::Io</code> (<code>InvalidInput</code>)
+at launch (D10), not a silent empty stdin. Prefer the reusable sources when
+a command may run more than once.</p>
+<p>For conversational, request/response stdin — write a line, read the answer,
+repeat — use <code>keep_stdin_open()</code> and the streaming API instead: see
+<a href="streaming.html#interactive-stdin">Streaming &amp; interactive I/O</a>.</p>
+<h2 id="output-handling"><a class="header" href="#output-handling">Output handling</a></h2>
+<h3 id="encodings"><a class="header" href="#encodings">Encodings</a></h3>
+<p>Output is decoded line by line, UTF-8 by default (invalid bytes become
+<code>U+FFFD</code>, never an error). Legacy-encoding tools can override per stream:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+let out = Command::new("legacy-tool")
+    .encoding(encoding_rs::SHIFT_JIS)          // both streams…
+    // .stdout_encoding(…) / .stderr_encoding(…) // …or each its own
+    .output_string()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p>(<code>processkit::Encoding</code> re-exports <code>encoding_rs::Encoding</code>, so any of its
+encodings works — the single-byte and ASCII-compatible multibyte ones
+(<code>WINDOWS_1252</code>, <code>GBK</code>, <code>SHIFT_JIS</code>, …) <strong>and</strong> the non-ASCII-compatible ones
+(<code>UTF_16LE</code>/<code>UTF_16BE</code>): output is fed through one persistent decoder and split
+on decoded newlines, so a <code>0x0A</code> byte inside a UTF-16 code unit is not mistaken
+for a line break. A leading byte-order mark of the chosen encoding is stripped
+once at the stream start.)</p>
+<h3 id="buffer-policies--bounding-memory-on-chatty-children"><a class="header" href="#buffer-policies--bounding-memory-on-chatty-children">Buffer policies — bounding memory on chatty children</a></h3>
+<p>Captured lines are held in memory; a multi-gigabyte log would normally grow
+the buffer to match. <code>output_buffer</code> bounds <em>retention</em> (the pipe is always
+fully drained, so the child never blocks):</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, OutputBufferPolicy, OverflowMode};
+
+let tail = Command::new("verbose-build")
+    .output_buffer(OutputBufferPolicy::bounded(1_000)) // keep the newest 1000 lines
+    .output_string()
+    .await?;
+
+// …or keep the head instead of the tail:
+let head_policy = OutputBufferPolicy::bounded(1_000).with_overflow(OverflowMode::DropNewest);
+<span class="boring">}</span></code></pre></pre>
+<p><code>DropOldest</code> (the default) keeps a rolling tail; <code>DropNewest</code> freezes the
+head. <code>bounded(0)</code> retains nothing — useful when a line handler (below) is the
+real consumer. Under a <em>line</em> cap, dropped or not, <strong>every</strong> line still feeds
+the handlers and the line counters.</p>
+<p>The line cap alone does not bound memory — one enormous newline-free "line"
+(<code>base64 -w0</code>) is held whole. Add <code>with_max_bytes</code> to cap the <em>retained bytes</em>
+too (either ceiling, or both); the byte cap also bounds the pump's in-flight
+assembly buffer, so a never-terminated flood can't exhaust memory. One
+consequence: a line whose own length exceeds the byte cap can't be assembled, so
+it is dropped <strong>whole</strong> — counted, but <strong>not</strong> delivered to a per-line handler or
+<code>stdout_tee</code> (don't set a byte cap if a tee must see arbitrarily long lines):</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">use processkit::{Command, OutputBufferPolicy};
+</span>let policy = OutputBufferPolicy::unbounded().with_max_bytes(8 &lt;&lt; 20); // 8 MiB ring
+let strict = OutputBufferPolicy::fail_loud(10_000).with_max_bytes(8 &lt;&lt; 20); // error on either
+<span class="boring">}</span></code></pre></pre>
+<p><code>fail_loud</code> makes the ceiling <strong>error</strong> instead of dropping: the run fails with
+<code>Error::OutputTooLarge</code> once the cumulative output (lines <em>or</em> bytes) crosses the
+cap — even when a streaming consumer is draining lines as they arrive. It bounds
+memory, not wall-time, so pair it with <code>timeout</code> against a flooding child.</p>
+<p>Even under a <em>drop</em> policy (<code>DropOldest</code>/<code>DropNewest</code>), the checking verbs that
+hand back stdout as if complete — <code>run</code>, <code>parse</code>, <code>try_parse</code> — <strong>refuse</strong>
+silently-truncated output (B12): if the policy dropped lines they fail with
+<code>Error::OutputTooLarge</code> rather than feed a parser a truncated tail. The lenient
+capture verbs (<code>output_string</code> / <code>output_bytes</code>) are unaffected — they return
+the partial result with <code>truncated()</code> set for you to inspect.</p>
+<h3 id="line-handlers--tee-output-as-it-arrives"><a class="header" href="#line-handlers--tee-output-as-it-arrives">Line handlers — tee output as it arrives</a></h3>
+<p><code>on_stdout_line</code> / <code>on_stderr_line</code> run a callback on each decoded line <em>in
+addition to</em> capture or streaming — logging, progress bars, metrics:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+let result = Command::new("cargo")
+    .args(["build", "--release"])
+    .on_stderr_line(|line| eprintln!("[build] {line}"))
+    .output_string()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p>The handler runs on the read pump — keep it cheap. The contract is forgiving
+and precisely specified:</p>
+<ul>
+<li><strong>A panicking handler does not poison the run.</strong> The panic is caught, the
+handler is disabled for the rest of the run (surfaced as a <code>tracing</code> warn
+when that feature is on), and pumping continues — the final result still
+carries <strong>every</strong> line. You can safely re-export this callback seam to your
+own users without auditing their closures.</li>
+<li><strong>Ordering:</strong> invocations are FIFO within a stream; there is no ordering
+between stdout and stderr handlers (two independent pumps). On the
+consuming verbs, <strong>all handler calls happen-before the awaited future
+resolves</strong> — finalize a progress bar the moment the call returns. (One
+documented exception: a leaked pipe held open past the child's death is cut
+off after a bounded teardown grace.)</li>
+<li>Handlers are <strong>hermetically testable</strong>: <code>ScriptedRunner</code> replays canned
+output through them — see
+<a href="testing.html#scripting-replies">Testing → scripting replies</a>.</li>
+</ul>
+<p>For a ready-made tee to an async sink — a file, socket, or any
+[<code>tokio::io::AsyncWrite</code>] — reach for <code>stdout_tee</code> / <code>stderr_tee</code> instead of
+hand-writing a handler. Each decoded line is written to the sink (plus a <code>\n</code>)
+as it is produced, <strong>awaited on the pump</strong> so a slow sink applies backpressure
+(the pump slows, the pipe fills, the child blocks) rather than blocking the
+runtime; a write error disables the tee with a <code>tracing</code> warn instead of being
+swallowed. It runs <strong>independently</strong> of <code>on_stdout_line</code> — set both and both
+fire per line.</p>
+<h2 id="timeouts-and-retries"><a class="header" href="#timeouts-and-retries">Timeouts and retries</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, Error};
+use std::time::Duration;
+
+let out = Command::new("flaky-network-tool")
+    .timeout(Duration::from_secs(30))                 // kill the tree at the deadline
+    .retry(3, Duration::from_millis(200), |e| {       // up to 3 attempts total
+        matches!(e, Error::Timeout { .. })            // …but only retry timeouts
+    })
+    .run()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li><strong><code>timeout</code></strong> kills the whole process tree at the deadline. On the capturing
+verbs the expiry is <em>captured</em> (<code>ProcessResult::timed_out</code>), on the
+success-checking verbs it <em>raises</em> <code>Error::Timeout</code> — the full decision
+table lives in <a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a>.</li>
+<li><strong><code>retry</code></strong> applies to the success-checking verbs only (<code>run</code>, <code>exit_code</code>,
+<code>probe</code>, and <code>ProcessRunnerExt::checked</code>); the classifier sees the typed
+error and decides. The non-erroring <code>output_string</code> path never retries.</li>
+</ul>
+<h2 id="privileges-and-spawn-flags"><a class="header" href="#privileges-and-spawn-flags">Privileges and spawn flags</a></h2>
+<p>Spawn-time controls for sandboxing and service launch:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+// Unix: drop privileges (uid + gid + supplementary groups) and detach.
+Command::new("worker")
+    .gid(1000)            // applied before uid (a gid change needs privilege)
+    .groups([1000])       // replace the inherited (often root's) supplementary groups
+    .uid(1000)            // dropped last
+    .setsid()             // new session: survives the controlling terminal
+    .run().await?;
+
+// Windows: no console window flashing up from a GUI app.
+Command::new("helper").create_no_window().run().await?;
+
+// Hardening: take the direct child down even if THIS process is SIGKILLed
+// (Drop never runs). Windows has this for free; Linux arms PDEATHSIG.
+Command::new("worker").kill_on_parent_death().start().await?;
+<span class="boring">}</span></code></pre></pre>
+<p><code>uid</code> / <code>gid</code> / <code>groups</code> / <code>setsid</code> are POSIX-only — on Windows the run
+fails with <code>Error::Unsupported</code> rather than silently skipping a privilege drop.
+A correct drop sets all three of <code>uid</code>/<code>gid</code>/<code>groups</code>: dropping the uid alone
+leaves the child holding the parent's (often root's) supplementary groups.
+<code>create_no_window</code> is a harmless no-op outside Windows.
+<code>kill_on_parent_death</code> is best-effort by design: guaranteed on Windows
+(regardless of the knob), direct-child-only on Linux, unavailable on
+macOS/BSD — the graceful-exit guarantee via <code>Drop</code> holds everywhere either
+way. Containment is preserved in every combination; the platform fine print
+(the Linux cgroup × <code>uid</code> interaction, <code>setsid</code> × process-group coordination,
+the pdeathsig thread caveat) is collected in
+<a href="platform-support.html#caveats">Platform support</a>.</p>
+<p><strong>Interactive auth / TTY.</strong> processkit wires <strong>pipes</strong>, not a pseudo-terminal,
+so a tool that <em>demands</em> a tty — an <code>ssh</code>/<code>sudo</code> <strong>password</strong> prompt, some
+credential helpers — won't get one (PTY support is not implemented; the
+trade-off is recorded in <code>decisions/permissions-privileges-pty-network.md</code>). Drive
+such tools <strong>non-interactively</strong> instead: key-based auth, <code>ssh -o BatchMode=yes</code>, <code>GIT_SSH_COMMAND</code> / <code>GIT_TERMINAL_PROMPT=0</code>, or feed a known
+answer over <a href="streaming.html#interactive-stdin">interactive stdin</a>. Conversational
+tools that read stdin without needing a tty already work today via
+<code>keep_stdin_open</code> + <code>stdout_lines</code>.</p>
+<h2 id="consuming-verbs"><a class="header" href="#consuming-verbs">Consuming verbs</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Verb</th><th>Returns</th><th>Non-zero exit</th><th>Timeout</th><th>Use when</th></tr></thead><tbody>
+<tr><td><code>output_string()</code></td><td><code>ProcessResult&lt;String&gt;</code></td><td>captured</td><td>captured (<code>timed_out</code>)</td><td>You want to inspect the outcome yourself</td></tr>
+<tr><td><code>output_bytes()</code></td><td><code>ProcessResult&lt;Vec&lt;u8&gt;&gt;</code></td><td>captured</td><td>captured</td><td>Binary stdout (images, archives, …)</td></tr>
+<tr><td><code>run()</code></td><td>trimmed stdout <code>String</code></td><td><code>Error::Exit</code></td><td><code>Error::Timeout</code></td><td>"Give me the answer or fail"</td></tr>
+<tr><td><code>exit_code()</code></td><td><code>i32</code></td><td>the code, <code>Ok</code></td><td><code>Error::Timeout</code></td><td>The code <em>is</em> the answer</td></tr>
+<tr><td><code>probe()</code></td><td><code>bool</code></td><td><code>0</code>→<code>true</code>, <code>1</code>→<code>false</code>, else <code>Error::Exit</code></td><td><code>Error::Timeout</code></td><td>Predicate commands: <code>git diff --quiet</code>, <code>grep -q</code></td></tr>
+<tr><td><code>first_line(pred)</code></td><td><code>Option&lt;String&gt;</code></td><td>— (stream-based)</td><td><code>Error::Timeout</code></td><td>Grab one matching line, kill the rest</td></tr>
+<tr><td><code>start()</code></td><td>live <code>RunningProcess</code></td><td>—</td><td>bounds the stream</td><td><a href="streaming.html">Streaming, interactive I/O, probes</a></td></tr>
+</tbody></table>
+</div>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+// probe(): the exit code as a boolean.
+let clean = Command::new("git").args(["diff", "--quiet"]).probe().await?;
+
+// first_line(): stop as soon as the interesting line appears.
+let first_match = Command::new("git")
+    .args(["log", "--oneline"])
+    .first_line(|l| l.contains("fix:"))
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p><code>first_line</code> returns <code>Ok(None)</code> when stdout closes without a match, and kills
+the (private-group) child once it has its answer — you never wait out a long
+log for one line. If the command's <a href="timeouts-and-cancellation.html"><code>cancel_on</code></a>
+token has fired, it returns <code>Error::Cancelled</code> instead of <code>Ok(None)</code>, so a
+readiness probe with a shutdown token can't misread cancellation as "the line
+never appeared".</p>
+<h2 id="results-and-errors"><a class="header" href="#results-and-errors">Results and errors</a></h2>
+<p>The capturing verbs hand back a <code>ProcessResult</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+let result = Command::new("git").args(["merge", "feature"]).output_string().await?;
+
+result.code();         // Option&lt;i32&gt; — None = killed (timeout/signal), no code
+result.signal();       // Option&lt;i32&gt; — the signal number (Unix), else None
+result.is_success();   // code in ok_codes (default {0})
+result.timed_out();    // the run's own deadline expired
+result.outcome();      // the explicit three-way enum behind the accessors above
+result.stdout();       // &amp;str (or &amp;[u8] from output_bytes)
+result.stderr();       // &amp;str
+result.combined();     // stdout + stderr concatenated
+result.diagnostic();   // stderr if non-empty, else stdout — the human-facing line
+                       // (git/jj put "CONFLICT …" on stdout!)
+
+// Opt into erroring whenever you're ready:
+let ok = result.ensure_success()?; // Exit / Timeout / Signalled (signal-kill) as typed errors
+<span class="boring">}</span></code></pre></pre>
+<p>When the three-way distinction matters, match on <code>Outcome</code> instead of
+mentally decoding the <code>code()</code>/<code>timed_out()</code> pair:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Outcome;
+
+match result.outcome() {
+    Outcome::Exited(0) =&gt; println!("clean"),
+    Outcome::Exited(code) =&gt; println!("failed with {code}"),
+    Outcome::Signalled(signal) =&gt; println!("killed by signal {signal:?}"),
+    Outcome::TimedOut =&gt; println!("hit its deadline"),
+    _ =&gt; {} // non_exhaustive: future dispositions
+}
+<span class="boring">}</span></code></pre></pre>
+<p>For a single query you usually don't need the <code>match</code> (and its
+<code>#[non_exhaustive]</code> wildcard): <code>Outcome</code> carries the same <code>code()</code> /
+<code>signal()</code> / <code>timed_out()</code> accessors as <code>ProcessResult</code>, so a bare <code>Outcome</code>
+(from <code>RunningProcess::wait</code> or <code>Finished::outcome</code>) answers directly —
+<code>outcome.code()</code>, <code>outcome.signal()</code>, <code>outcome.timed_out()</code>. There is no
+<code>Outcome::is_success</code> (success is <code>ok_codes</code>-aware — use
+<code>ProcessResult::is_success</code>).</p>
+<p>The error enum is structured and <code>#[non_exhaustive]</code>:</p>
+<div class="table-wrapper"><table><thead><tr><th>Variant</th><th>Meaning</th></tr></thead><tbody>
+<tr><td><code>Error::Spawn { program, source }</code></td><td>The program was located but the OS couldn't start it (permissions, a bad working directory, a Windows <code>.cmd</code>/<code>.bat</code> needing <code>cmd.exe</code>, …) — <strong>not</strong> <code>is_not_found()</code></td></tr>
+<tr><td><code>Error::NotFound { program, searched }</code></td><td>The program couldn't be located (the single "not found" representation — <code>is_not_found()</code> is true); <code>searched</code> is <code>Some(dirs)</code> for a bare-name <code>PATH</code> lookup, <code>None</code> otherwise</td></tr>
+<tr><td><code>Error::Exit { program, code, stdout, stderr }</code></td><td>Non-zero exit, both streams attached in full (the <code>Display</code> message is bounded, but the fields carry the complete captured text for classification)</td></tr>
+<tr><td><code>Error::Signalled { program, signal, stdout, stderr }</code></td><td>The process was killed by a signal (no exit code); <code>signal</code> carries the number on Unix, <code>None</code> elsewhere; the partial streams captured before the kill are attached (reach them via <code>diagnostic()</code>)</td></tr>
+<tr><td><code>Error::OutputTooLarge { program, line_limit, byte_limit, total_lines, total_bytes }</code></td><td>A <code>fail_loud</code> buffer's line or byte ceiling was exceeded</td></tr>
+<tr><td><code>Error::Timeout { program, timeout, stdout, stderr }</code></td><td>The run's own deadline killed it; whatever the run captured before the kill is attached — a hung tool's last stderr line tails the <code>Display</code> and is reachable via <code>diagnostic()</code></td></tr>
+<tr><td><code>Error::NotReady { program, timeout }</code></td><td>A <a href="streaming.html#readiness-probes">readiness probe</a> gave up</td></tr>
+<tr><td><code>Error::Parse { program, message }</code></td><td>A <code>try_parse</code> parser (on <code>Command</code>, <code>ProcessRunnerExt</code>, <code>CliClient</code>, or <code>Pipeline</code>) rejected the output (the <code>Display</code>/<code>Debug</code> of <code>message</code> is bounded to a 200-byte preview; the field carries the full text)</td></tr>
+<tr><td><code>Error::Stdin { program, source }</code></td><td>Feeding the child's stdin failed for a non-broken-pipe reason on an <em>otherwise-successful</em> run (a louder failure — exit/signal/timeout — wins instead); a routine broken pipe never surfaces</td></tr>
+<tr><td><code>Error::CassetteMiss { program }</code></td><td>(<code>record</code> feature) a cassette replay found no matching recording (stale/incomplete cassette) — kept distinct from a missing program, so <code>is_not_found()</code> is <code>false</code></td></tr>
+<tr><td><code>Error::Unsupported { operation }</code></td><td>The platform can't do what was asked (and silently skipping would be wrong)</td></tr>
+<tr><td><code>Error::Cancelled { program }</code></td><td>the run's token was cancelled</td></tr>
+<tr><td><code>Error::ResourceLimit { message }</code></td><td>(<code>limits</code> feature) a requested cap couldn't be enforced</td></tr>
+<tr><td><code>Error::Io(source)</code></td><td>A low-level IO error from the crate's own machinery (driving a child, group control, cassette files) — never an arbitrary foreign <code>io::Error</code> (no blanket <code>From</code>, D13)</td></tr>
+</tbody></table>
+</div>
+<p><code>Error::diagnostic()</code> returns the most useful human-facing line out of a
+failure that captured output — <code>Exit</code>, and (D12) <code>Timeout</code> / <code>Signalled</code> (the
+partial streams of a hung-then-killed or crashed tool). Each of those variants'
+one-line <code>Display</code> also appends a bounded excerpt of that diagnostic (the last
+non-empty line, capped at 200 bytes), so a bare <code>eprintln!("{e}")</code> reads
+<code>`git` exited with code 2: fatal: boom</code> — actionable in a log line without
+dumping multi-KiB streams into it.</p>
+<hr />
+<p>Next: <a href="streaming.html">Streaming &amp; interactive I/O</a> ·
+<a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a> ·
+<a href="process-groups.html">Process groups</a></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="process-groups"><a class="header" href="#process-groups">Process groups</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p>A <code>ProcessGroup</code> ties the lifetime of a whole child-process <strong>tree</strong> to a Rust
+value: every process spawned into the group — and everything <em>those</em> processes
+spawn — is killed when the group is dropped. An exiting, panicking, or
+<code>?</code>-returning owner never leaks subprocesses; the kernel object enforcing this
+(Job Object / cgroup / POSIX process group) catches even grandchildren you
+never knew about. (Killing grandchildren is the problem <code>duct.py</code>'s gotchas
+list files under "currently unsolved" for pipe-based designs — kernel
+containment is the solution, and the reason this crate exists.)</p>
+<ul>
+<li><a href="process-groups.html#creating-a-group">Creating a group</a></li>
+<li><a href="process-groups.html#putting-processes-in">Putting processes in</a></li>
+<li><a href="process-groups.html#tearing-down-drop-terminate-shutdown">Tearing down: drop, terminate, shutdown</a></li>
+<li><a href="process-groups.html#signalling-the-whole-tree">Signalling the whole tree</a></li>
+<li><a href="process-groups.html#suspending-and-resuming">Suspending and resuming</a></li>
+<li><a href="process-groups.html#listing-members">Listing members</a></li>
+<li><a href="process-groups.html#resource-limits">Resource limits</a></li>
+<li><a href="process-groups.html#stats-and-sampling">Stats and sampling</a></li>
+</ul>
+<h2 id="creating-a-group"><a class="header" href="#creating-a-group">Creating a group</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{ProcessGroup, ProcessGroupOptions};
+use std::time::Duration;
+
+// Defaults: 2s graceful-shutdown grace, escalate to SIGKILL.
+let group = ProcessGroup::new()?;
+
+// Tuned:
+let group = ProcessGroup::with_options(
+    ProcessGroupOptions::default()
+        .shutdown_timeout(Duration::from_secs(10))
+        .escalate_to_kill(true),
+)?;
+
+// Which kernel mechanism is actually containing the tree?
+println!("{:?}", group.mechanism()); // JobObject | CgroupV2 | ProcessGroup
+<span class="boring">}</span></code></pre></pre>
+<p><code>mechanism()</code> reports what you actually got: <code>CgroupV2</code> quietly falls back to
+<code>ProcessGroup</code> on Linux hosts without cgroup delegation (see
+<a href="platform-support.html">Platform support</a>).</p>
+<p>You rarely create a group explicitly for one-shot runs: every
+<code>Command::run()</code>-style call makes a private group automatically. Reach for an
+explicit group when several children should share one fate, or when you need
+the group verbs below.</p>
+<h2 id="putting-processes-in"><a class="header" href="#putting-processes-in">Putting processes in</a></h2>
+<p>Three doors, in order of preference:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup};
+
+let group = ProcessGroup::new()?;
+
+// 1. start(): the full Command experience (capture, streaming, timeouts) in a
+//    SHARED group. The handle does not own the group — dropping the handle
+//    kills that child, dropping the group kills everyone.
+let server = group.start(&amp;Command::new("dev-server")).await?;
+
+// 2. spawn(): the raw escape hatch for a tokio::process::Command you already
+//    have. You get the bare Child back; pipes and reaping are your problem.
+//    spawn() takes the command BY VALUE (reuse would stack pre-exec hooks).
+let raw = tokio::process::Command::new("background-helper");
+let child = group.spawn(raw)?;
+
+// 3. adopt(): contain a child that was spawned OUTSIDE the group.
+let external = tokio::process::Command::new("legacy-launcher").spawn()?;
+group.adopt(&amp;external)?;
+<span class="boring">}</span></code></pre></pre>
+<p><code>adopt</code> moves only the named process: descendants it <em>already</em> has keep their
+old containment (future forks are captured — on Windows/cgroup). A few sharp
+edges worth knowing:</p>
+<ul>
+<li>A child that already exited <strong>but has not been reaped</strong> (no <code>wait()</code> yet — a
+zombie whose pid/handle is still valid) is a successful <strong>no-op</strong>: there is
+nothing left to contain, so <code>adopt</code> returns <code>Ok</code> on the containment backends.</li>
+<li>A child that already exited <strong>and was reaped</strong> (<code>wait()</code>ed) has no pid left —
+<code>adopt</code> returns an error rather than silently tracking nothing.</li>
+<li>On the POSIX process-group mechanism, a child that has already <code>exec</code>'d
+can't be re-grouped (POSIX forbids it), so it is tracked <em>individually</em>: the
+child itself is signalled/killed with the group, but its future forks are
+not. The caller keeps the <code>Child</code> handle and is responsible for reaping.</li>
+</ul>
+<h2 id="tearing-down-drop-terminate-shutdown"><a class="header" href="#tearing-down-drop-terminate-shutdown">Tearing down: drop, terminate, shutdown</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Verb</th><th>What happens</th><th>When</th></tr></thead><tbody>
+<tr><td><code>drop(group)</code></td><td>Immediate <strong>hard kill</strong> of the whole tree (kill-on-close)</td><td>The safety net — always on</td></tr>
+<tr><td><code>group.terminate_all()</code></td><td>The same hard kill, group stays usable (cgroup-<code>kill</code> / Job Object / process-group backends). On a <strong>pre-5.14 Linux kernel</strong> lacking <code>cgroup.kill</code>, the per-pid <code>SIGKILL</code> fallback returns <code>Err</code> if the tree doesn't drain (a fork bomb still out-spawning, or <code>D</code>-state zombies)</td><td>Explicit teardown mid-flight; idempotent</td></tr>
+<tr><td><code>group.shutdown().await</code></td><td>Unix: <code>SIGTERM</code> → wait <code>shutdown_timeout</code> → <code>SIGKILL</code> survivors (if <code>escalate_to_kill</code>); Windows: atomic job kill. Consumes the group</td><td>Graceful service stop</td></tr>
+</tbody></table>
+</div>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup, ProcessGroupOptions};
+use std::time::Duration;
+
+let group = ProcessGroup::with_options(
+    ProcessGroupOptions::default()
+        .shutdown_timeout(Duration::from_secs(5))
+        .escalate_to_kill(true),
+)?;
+let _service = group.start(&amp;Command::new("my-service")).await?;
+
+// SIGTERM, give it 5s to flush and exit, SIGKILL stragglers:
+group.shutdown().await?;
+<span class="boring">}</span></code></pre></pre>
+<p>A child that handles <code>SIGTERM</code> ends the grace <strong>early</strong> — <code>shutdown</code> returns
+as soon as the tree is empty, not after the full timeout. One subtlety: the
+liveness probe sees an exited-but-unreaped child (a zombie) as alive on the
+process-group backends, so keep <code>wait()</code>ing your handles concurrently if you
+want the early return. <code>Drop</code> can't <code>await</code>, which is why the graceful tier
+lives in this async method — dropping without calling it performs only the
+hard kill.</p>
+<h2 id="signalling-the-whole-tree"><a class="header" href="#signalling-the-whole-tree">Signalling the whole tree</a></h2>
+<blockquote>
+<p><code>signal</code>/<code>suspend</code>/<code>resume</code>/<code>members</code>/<code>adopt</code> — this section and the two
+below — require the default-on <strong><code>process-control</code></strong> feature. The teardown
+verbs above are core and always present.</p>
+</blockquote>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup, Signal};
+
+let group = ProcessGroup::new()?;
+let _server = group.start(&amp;Command::new("my-server")).await?;
+
+group.signal(Signal::Hup)?;        // "reload your configuration"
+group.signal(Signal::Usr1)?;       // whatever the tool defines
+group.signal(Signal::Other(34))?;  // raw signal number escape hatch
+<span class="boring">}</span></code></pre></pre>
+<div class="table-wrapper"><table><thead><tr><th>Platform</th><th>Deliverable signals</th></tr></thead><tbody>
+<tr><td>Linux (cgroup or pgroup), macOS/BSD</td><td>Any — <code>Term</code>, <code>Kill</code>, <code>Int</code>, <code>Hup</code>, <code>Quit</code>, <code>Usr1</code>, <code>Usr2</code>, <code>Other(n)</code></td></tr>
+<tr><td>Windows</td><td><code>Kill</code> only (maps to the Job Object terminate); anything else → <code>Error::Unsupported</code></td></tr>
+</tbody></table>
+</div>
+<p><code>Signal::Kill</code> always takes the same <em>atomic</em> whole-tree kill path as
+<code>terminate_all</code> (<code>cgroup.kill</code> / <code>killpg</code> / job terminate), so it cannot miss
+a process forked mid-broadcast. Other signals are a per-member broadcast —
+best-effort against a tree that is forking at that exact moment. An empty
+group accepts any deliverable signal trivially. On the <strong>cgroup</strong> mechanism a
+real per-member delivery failure (e.g. <code>EPERM</code> from a member that changed uid, or
+a seccomp/container restriction) is surfaced as an <code>Err</code> rather than swallowed —
+an <code>ESRCH</code> race (the member already exited) is still success; the pgroup
+(macOS/BSD, Linux-without-cgroup) backend remains purely best-effort.</p>
+<h2 id="suspending-and-resuming"><a class="header" href="#suspending-and-resuming">Suspending and resuming</a></h2>
+<p>Freeze a tree (to snapshot it, to starve a runaway while you investigate, to
+pause background work), then thaw it:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup};
+
+let group = ProcessGroup::new()?;
+let _cruncher = group.start(&amp;Command::new("cpu-hog")).await?;
+
+group.suspend()?;   // the whole tree stops consuming CPU
+// … inspect, snapshot, wait for the user …
+group.resume()?;
+<span class="boring">}</span></code></pre></pre>
+<p>Per-platform machinery — and its visible differences:</p>
+<div class="table-wrapper"><table><thead><tr><th>Platform</th><th>Mechanism</th><th>Notes</th></tr></thead><tbody>
+<tr><td>Linux cgroup</td><td>one <code>cgroup.freeze</code> write</td><td>Atomic over the subtree; freeze is <strong>group state</strong></td></tr>
+<tr><td>Linux pgroup, macOS/BSD</td><td><code>SIGSTOP</code> / <code>SIGCONT</code> broadcast</td><td>Idempotent (level-triggered)</td></tr>
+<tr><td>Windows</td><td>per-thread <code>SuspendThread</code> walk</td><td><strong>Counted</strong>: N suspends need N resumes; best-effort against mid-walk thread churn</td></tr>
+</tbody></table>
+</div>
+<p>Two caveats that bite in practice:</p>
+<ul>
+<li><strong>Spawning into a suspended group diverges.</strong> Under the cgroup mechanism a
+child spawned or adopted while the group is frozen <strong>starts frozen</strong> — and
+<code>start()</code> <em>may never return</em> until <code>resume</code> (the forked child joins the
+cgroup before <code>exec</code>, so it can freeze before completing the spawn
+handshake). Windows and the pgroup backends freeze only members present at
+the call. Rule of thumb: resume before starting new work.</li>
+<li>A suspended tree can still be <strong>hard-killed</strong> (drop / <code>terminate_all</code> /
+<code>Signal::Kill</code> all act on frozen processes), but a graceful <code>shutdown</code>
+starts with a <code>SIGTERM</code> the frozen tree can't act on — it would wait out the
+whole grace. Resume first for a clean shutdown.</li>
+</ul>
+<h2 id="listing-members"><a class="header" href="#listing-members">Listing members</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup};
+
+let group = ProcessGroup::new()?;
+let _a = group.start(&amp;Command::new("worker-a")).await?;
+let _b = group.start(&amp;Command::new("worker-b")).await?;
+
+let pids: Vec&lt;u32&gt; = group.members()?;
+println!("live members: {pids:?}");
+<span class="boring">}</span></code></pre></pre>
+<p>What "members" means depends on the mechanism: Windows and Linux-cgroup list
+the <strong>whole tree</strong> (every descendant pid); the POSIX process-group backends
+list the tracked group <em>leaders</em> (one pid per started/adopted child) — their
+descendants are contained but not enumerated. An exited child still counts
+until it is reaped. The snapshot is point-in-time: a tree that is forking
+races it.</p>
+<p>To <em>wait</em> on members rather than list them, race the handles with
+<a href="streaming.html#racing-children-with-wait_any"><code>wait_any</code></a>.</p>
+<h2 id="resource-limits"><a class="header" href="#resource-limits">Resource limits</a></h2>
+<p>Requires the <strong><code>limits</code></strong> feature. Caps are a property of the group, set once
+at creation and enforced by the same kernel object that contains the tree:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup, ProcessGroupOptions};
+
+let group = ProcessGroup::with_options(
+    ProcessGroupOptions::default()
+        .memory_max(512 * 1024 * 1024) // bytes, whole tree
+        .max_processes(64)             // fork-bomb ceiling
+        .cpu_quota(0.5),               // half of one core
+)?;
+let _sandboxed = group.start(&amp;Command::new("untrusted-tool")).await?;
+<span class="boring">}</span></code></pre></pre>
+<div class="table-wrapper"><table><thead><tr><th>Capability</th><th>Windows Job Object</th><th>Linux cgroup v2</th><th>pgroup / macOS / BSD</th></tr></thead><tbody>
+<tr><td>Memory cap</td><td>✅ whole-tree</td><td>✅ whole-tree (<code>memory.max</code>)</td><td>❌</td></tr>
+<tr><td>Process-count cap</td><td>✅</td><td>✅ (<code>pids.max</code>)</td><td>❌</td></tr>
+<tr><td>CPU quota</td><td>🟡 approximate (rate vs. total CPU)</td><td>✅ (<code>cpu.max</code>)</td><td>❌</td></tr>
+</tbody></table>
+</div>
+<p><code>cpu_quota</code> is a fraction of a <strong>single</strong> core (<code>2.0</code> = two cores). Limits
+need a real container; when a requested cap can't be enforced — no Job
+Object/cgroup, or a Linux cgroup whose controllers can't be enabled —
+<code>with_options</code> returns <code>Error::ResourceLimit</code> instead of handing back a
+silently-unbounded group. On Linux this needs the process to run at the
+<strong>real cgroup-v2 root</strong>: the crate enables the controllers in this process's own
+cgroup, which cgroup v2's "no internal processes" rule allows only for the real
+hierarchy root — <em>not</em> a cgroup-namespace root (so an ordinary container fails
+too), <em>not</em> under systemd — and the crate doesn't migrate your process. See the
+limits prerequisites in
+<a href="platform-support.html#containment-mechanisms">Platform support</a>. The <code>uid()</code>-drop
+interaction lives under its <a href="platform-support.html#caveats">Caveats</a>.</p>
+<h2 id="stats-and-sampling"><a class="header" href="#stats-and-sampling">Stats and sampling</a></h2>
+<p>Requires the opt-in <strong><code>stats</code></strong> feature (<code>features = ["stats"]</code>, or <code>limits</code>).</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup, StreamExt};
+use std::time::Duration;
+
+let group = ProcessGroup::new()?;
+let _worker = group.start(&amp;Command::new("worker")).await?;
+
+// Point-in-time:
+let snap = group.stats()?;
+println!(
+    "procs={} cpu={:?} peak_rss={:?}",
+    snap.active_process_count, snap.total_cpu_time, snap.peak_memory_bytes,
+);
+
+// …or a series: first sample immediate, then every 250ms; missed ticks are
+// skipped; the stream ends when the group can no longer report.
+let mut samples = group.sample_stats(Duration::from_millis(250));
+while let Some(s) = samples.next().await {
+    println!("rss now: {:?}", s.peak_memory_bytes);
+}
+<span class="boring">}</span></code></pre></pre>
+<p>CPU time and peak memory are available where the kernel accounts for the
+whole tree (Windows, Linux cgroup); the process-group backends report the
+member <strong>count</strong> only — the <code>Option</code> fields stay <code>None</code>. The sampler borrows
+the group, so it can neither outlive it nor keep it (and the kill-on-drop
+guarantee) alive. For a <em>single run's</em> end-to-end summary, see
+<a href="streaming.html#per-run-telemetry"><code>profile</code></a>.</p>
+<hr />
+<p>Next: <a href="streaming.html">Streaming &amp; interactive I/O</a> ·
+<a href="platform-support.html">Platform support</a> ·
+<a href="supervision.html">Supervision</a></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="streaming--interactive-io"><a class="header" href="#streaming--interactive-io">Streaming &amp; interactive I/O</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p>The one-shot verbs in <a href="commands.html">Running commands</a> buffer the whole output.
+For long-running or conversational children, <code>Command::start()</code> returns a live
+<code>RunningProcess</code> you drive yourself: stream stdout as it arrives, write stdin
+incrementally, probe for readiness, race several children, or profile a run.</p>
+<ul>
+<li><a href="streaming.html#lifecycle">Lifecycle</a></li>
+<li><a href="streaming.html#streaming-stdout">Streaming stdout</a></li>
+<li><a href="streaming.html#interactive-stdin">Interactive stdin</a></li>
+<li><a href="streaming.html#readiness-probes">Readiness probes</a></li>
+<li><a href="streaming.html#racing-children-with-wait_any">Racing children with <code>wait_any</code></a></li>
+<li><a href="streaming.html#per-run-telemetry">Per-run telemetry</a></li>
+</ul>
+<h2 id="lifecycle"><a class="header" href="#lifecycle">Lifecycle</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+let mut run = Command::new("dev-server").start().await?;
+
+run.pid();        // Option&lt;u32&gt; — None once the child is reaped
+run.elapsed();    // time since spawn
+
+// Consume the handle exactly one way:
+//   output_string() / output_bytes()  → capture everything (same as the one-shot verbs)
+//   wait()                            → just the Outcome; output is discarded
+//   finish()                 → after streaming stdout (below)
+//   profile(every)                    → capture + resource samples (stats feature)
+let outcome = run.wait().await?;   // Outcome: Exited(code) / Signalled(sig) / TimedOut
+<span class="boring">}</span></code></pre></pre>
+<p><code>start()</code> puts the child in a <strong>private group the handle owns</strong>: dropping the
+<code>RunningProcess</code> kills the whole tree, exactly like dropping a one-shot run's
+future. The shared-group variant — <code>group.start(&amp;cmd)</code> — gives the same handle
+but the <em>group</em> controls the tree's fate (see
+<a href="process-groups.html#putting-processes-in">Process groups</a>).</p>
+<p>There is also an explicit <code>run.start_kill()</code> for "stop it now, I'll <code>wait()</code>
+for the code myself".</p>
+<h2 id="streaming-stdout"><a class="header" href="#streaming-stdout">Streaming stdout</a></h2>
+<p><code>stdout_lines()</code> yields decoded lines as the child produces them — no waiting
+for exit, no full-output buffering. <code>StreamExt</code> (re-exported from
+<code>tokio-stream</code>) provides <code>.next()</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::{Command, Outcome, StreamExt, Finished};
+
+#[tokio::main]
+async fn main() -&gt; processkit::Result&lt;()&gt; {
+    let mut run = Command::new("cargo")
+        .args(["build", "--release"])
+        .start()
+        .await?;
+
+    let mut lines = run.stdout_lines()?;
+    while let Some(line) = lines.next().await {
+        println!("build: {line}");
+    }
+
+    // The stream ended (stdout closed). Collect the outcome and stderr —
+    // stderr was drained in the background the whole time, so a noisy child
+    // could never block on a full pipe.
+    let Finished { outcome, stderr, .. } = run.finish().await?;
+    if outcome != Outcome::Exited(0) {
+        eprintln!("build failed ({outcome:?}):\n{stderr}");
+    }
+    Ok(())
+}</code></pre></pre>
+<p>Things to know:</p>
+<ul>
+<li><strong>Call <code>stdout_lines()</code> once.</strong> It is fallible: a second <code>stdout_lines</code> /
+<code>output_events</code> call (stdout is consumed once), or a non-piped stdout
+(<code>StdioMode::Inherit</code>/<code>Null</code>), returns <code>Err</code> rather than a silently-empty
+stream.</li>
+<li><strong>The command's <code>timeout</code> bounds the stream</strong> on an own-group handle: at the
+deadline the tree is killed, the pipes close, and the stream ends — a
+streamed run can't hang past its deadline. A <code>cancel_on</code> token ends it the
+same way; the following
+<code>finish</code> then reports <code>Error::Cancelled</code>. Details in
+<a href="timeouts-and-cancellation.html">Timeouts &amp; cancellation</a>.</li>
+<li>Line counters tick live: <code>run.stdout_line_count()</code> / <code>stderr_line_count()</code>
+are cheap progress gauges even while you stream.</li>
+<li>The <a href="commands.html#output-handling">buffer policy and line handlers</a> apply to
+streamed runs too — a handler sees each line on the pump, in addition to
+your loop.</li>
+<li>The whole streaming surface is <strong>hermetically testable</strong>: a
+<code>ScriptedRunner</code>'s <code>start()</code> returns a handle whose canned lines flow
+through the same pump machinery — <code>stdout_lines</code>, the readiness probes, and
+<code>finish</code> behave identically with no subprocess. See
+<a href="testing.html#scripted-streaming">Testing → scripted streaming</a>.</li>
+</ul>
+<h2 id="interactive-stdin"><a class="header" href="#interactive-stdin">Interactive stdin</a></h2>
+<p>Conversational tools — write a request, read the response, repeat. Keep stdin
+open with <code>keep_stdin_open()</code>, take the writer with <code>take_stdin()</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::{Command, Outcome, StreamExt, Finished};
+
+// `ProcessStdin`'s writer methods return `std::io::Result`; `Box&lt;dyn Error&gt;`
+// mixes them with the crate's `Result` (or `.map_err(processkit::Error::Io)?`).
+#[tokio::main]
+async fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+    // `bc` evaluates each stdin line and prints the result.
+    let mut run = Command::new("bc").keep_stdin_open().start().await?;
+    let mut stdin = run.take_stdin().expect("stdin was kept open");
+    let mut answers = run.stdout_lines()?;
+
+    stdin.write_line("2 + 2").await?;             // writes "2 + 2\n", flushed
+    println!("= {}", answers.next().await.unwrap());
+
+    stdin.write_line("6 * 7").await?;
+    println!("= {}", answers.next().await.unwrap());
+
+    stdin.finish().await?;                        // send EOF — bc exits
+    let Finished { outcome, .. } = run.finish().await?;
+    assert_eq!(outcome, Outcome::Exited(0));
+    Ok(())
+}</code></pre></pre>
+<p><code>ProcessStdin</code> offers <code>write(&amp;[u8])</code>, <code>write_line(&amp;str)</code> (newline + flush),
+<code>flush()</code>, and <code>finish()</code> (EOF). Dropping the writer — or the whole
+<code>RunningProcess</code> — closes stdin too; <code>finish()</code> just makes the EOF explicit
+and awaitable.</p>
+<p><strong>Avoid the full-duplex deadlock.</strong> A child's stdout pipe has a finite OS
+buffer; once it fills, the child blocks <em>writing</em> stdout until something reads
+it. If you push a large interactive stdin while nothing drains the child's
+stdout, the child stops reading stdin (blocked on stdout), your <code>write</code> parks
+waiting for stdin buffer space, and neither side progresses. The <code>bc</code> example
+above is safe because it interleaves one write with one read; when you both feed
+a sizable stdin <strong>and</strong> the child produces output, drain <code>stdout_lines</code> from one
+task while writing stdin from another. (The non-interactive <code>Stdin::from_*</code>
+sources are safe — the crate writes them on a background task that runs
+concurrently with the output pumps.)</p>
+<p>For <em>one-directional</em> streamed input (a channel, a file tail) you don't need
+interactivity — give the command <code>Stdin::from_lines(stream)</code> /
+<code>Stdin::from_reader(reader)</code> and let the background writer feed it; see the
+<a href="commands.html#standard-input">stdin source table</a>.</p>
+<h2 id="readiness-probes"><a class="header" href="#readiness-probes">Readiness probes</a></h2>
+<p>"Start a server, then use it" needs <em>ready</em>, not merely <em>started</em>. Three
+probes replace the arbitrary sleep, each bounded by its own deadline:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+use std::time::Duration;
+
+let mut run = Command::new("my-server").start().await?;
+
+// 1. A line on stdout (returns the matching line):
+let banner = run
+    .wait_for_line(|l| l.contains("listening on"), Duration::from_secs(10))
+    .await?;
+
+// 2. A TCP port accepting connections:
+run.wait_for_port("127.0.0.1:8080".parse().unwrap(), Duration::from_secs(10))
+    .await?;
+
+// 3. Any async predicate (an HTTP /health endpoint, a file appearing, …):
+run.wait_for(|| async { health_check().await }, Duration::from_secs(10))
+    .await?;
+
+// ready — use the server…
+<span class="boring">}</span></code></pre></pre>
+<p>Probe semantics, deliberately uniform:</p>
+<ul>
+<li>A probe that can't pass within its deadline fails with <strong><code>Error::NotReady</code></strong>
+— distinct from <code>Error::Timeout</code>, which is the run's own deadline.</li>
+<li>A probe also fails <em>fast</em> once readiness can no longer happen: the child
+exits, or (for <code>wait_for_line</code>) its stdout closes — no waiting out a 30s
+deadline on a dead server.</li>
+<li>A failed probe <strong>never kills the child.</strong> You decide: retry, log and
+continue, or tear down.</li>
+<li><code>wait_for_line</code> consumes stdout up to (and including) the match — continue
+with <code>finish</code> or further streaming. <code>wait_for_port</code> / <code>wait_for</code>
+don't touch the pipes at all.</li>
+</ul>
+<h2 id="racing-children-with-wait_any"><a class="header" href="#racing-children-with-wait_any">Racing children with <code>wait_any</code></a></h2>
+<p>The free function <code>wait_any</code> races several running processes and reports
+whichever exits first — the natural primitive for "restart whatever died" or
+"first answer wins":</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup, wait_any};
+
+let group = ProcessGroup::new()?;
+let mut a = group.start(&amp;Command::new("replica-a")).await?;
+let mut b = group.start(&amp;Command::new("replica-b")).await?;
+
+let (index, outcome) = wait_any(&amp;mut [&amp;mut a, &amp;mut b]).await?;
+println!("contender #{index} exited first with {outcome:?}");
+
+// Only borrows: the loser is still usable.
+let survivor = if index == 0 { &amp;mut b } else { &amp;mut a };
+<span class="boring">}</span></code></pre></pre>
+<p><code>wait_any</code> takes <code>&amp;mut</code> borrows, applies no timeout of its own (wrap it in
+<code>tokio::time::timeout</code> to bound the race), and does no output pumping — drain
+chatty children first or give them bounded
+<a href="commands.html#output-handling">buffer policies</a>.</p>
+<h2 id="per-run-telemetry"><a class="header" href="#per-run-telemetry">Per-run telemetry</a></h2>
+<p>With the opt-in <strong><code>stats</code></strong> feature, a running child reports its own
+resource usage, and <code>profile()</code> turns a whole run into a summary:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+use std::time::Duration;
+
+let run = Command::new("crunch").start().await?;
+run.cpu_time();          // Option&lt;Duration&gt; — user+kernel so far
+run.peak_memory_bytes(); // Option&lt;u64&gt;
+
+// …or capture + sample on an interval until exit:
+let profile = Command::new("crunch")
+    .start().await?
+    .profile(Duration::from_millis(100))
+    .await?;
+
+println!(
+    "exit={:?} wall={:?} cpu={:?} peak_rss={:?} avg_cpu={:?} ({} samples)",
+    profile.exit_code,
+    profile.duration,
+    profile.cpu_time,
+    profile.peak_memory_bytes,
+    profile.avg_cpu(),          // cpu / wall — e.g. Some(1.7) ≈ 1.7 cores busy
+    profile.samples,
+);
+<span class="boring">}</span></code></pre></pre>
+<p>These read the <em>child process itself</em> (not a whole tree — that's
+<a href="process-groups.html#stats-and-sampling"><code>ProcessGroup::stats</code></a>), and
+availability follows the platform: full CPU/memory on Windows and Linux,
+<code>None</code> where the kernel doesn't account per-process cheaply — see
+<a href="platform-support.html">Platform support</a>.</p>
+<hr />
+<p>Next: <a href="pipelines.html">Pipelines</a> ·
+<a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a> ·
+<a href="supervision.html">Supervision</a></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="pipelines"><a class="header" href="#pipelines">Pipelines</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p><code>a | b | c</code> <strong>without a shell</strong>. Each stage's stdout feeds the next stage's
+stdin through an in-process relay (a <code>tokio::io::copy</code> task per boundary) — there
+is no shell string anywhere, so no quoting rules, no word splitting, no injection
+surface. All stages spawn into one shared kill-on-drop
+<a href="process-groups.html">process group</a>, so the chain lives and dies as a unit. (The
+relay is an implementation detail, not a kernel splice: a producer whose consumer
+exits early stops on a <em>broken pipe</em> when the relay's next write fails, rather
+than instantly via <code>SIGPIPE</code>.)</p>
+<ul>
+<li><a href="pipelines.html#building-and-running">Building and running</a></li>
+<li><a href="pipelines.html#semantics-pipefail-and-the-ends">Semantics: pipefail and the ends</a></li>
+<li><a href="pipelines.html#unchecked-stages">Unchecked stages</a></li>
+<li><a href="pipelines.html#timeouts">Timeouts</a></li>
+<li><a href="pipelines.html#re-running-a-pipeline">Re-running a pipeline</a></li>
+</ul>
+<h2 id="building-and-running"><a class="header" href="#building-and-running">Building and running</a></h2>
+<p><code>Command::pipe(next)</code> starts a <code>Pipeline</code>; chain more stages with
+<code>Pipeline::pipe</code>; drive it with <code>output_string()</code> or <code>run()</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::Command;
+
+#[tokio::main]
+async fn main() -&gt; processkit::Result&lt;()&gt; {
+    // git log --format=%an | sort | uniq -c
+    let authors = Command::new("git").args(["log", "--format=%an"])
+        .pipe(Command::new("sort"))
+        .pipe(Command::new("uniq").arg("-c"))
+        .run()                         // require every stage to succeed
+        .await?;
+    println!("{authors}");
+    Ok(())
+}</code></pre></pre>
+<p>The verbs mirror <code>Command</code>'s, each operating on the pipefail outcome:</p>
+<div class="table-wrapper"><table><thead><tr><th>Verb</th><th>Returns</th><th>A failing stage is…</th></tr></thead><tbody>
+<tr><td><code>output_string()</code></td><td><code>ProcessResult&lt;String&gt;</code></td><td>…reported in the result (code/stderr/program of the first unclean stage)</td></tr>
+<tr><td><code>output_bytes()</code></td><td><code>ProcessResult&lt;Vec&lt;u8&gt;&gt;</code></td><td>…same, with the last stage's stdout captured raw (binary pipes)</td></tr>
+<tr><td><code>run()</code></td><td>trimmed final stdout</td><td>…raised as that stage's <code>Error::Exit</code>; fails loud on a truncated capture</td></tr>
+<tr><td><code>checked()</code></td><td>full <code>ProcessResult&lt;String&gt;</code></td><td>…raised as <code>Error::Exit</code> (untrimmed stdout)</td></tr>
+<tr><td><code>run_unit()</code></td><td><code>()</code></td><td>…raised as <code>Error::Exit</code> (output discarded)</td></tr>
+<tr><td><code>exit_code()</code></td><td><code>i32</code></td><td>…its attributed code (no code → <code>Error::Timeout</code>/<code>Signalled</code>)</td></tr>
+<tr><td><code>probe()</code></td><td><code>bool</code></td><td><code>0</code> → <code>true</code>, <code>1</code> → <code>false</code>, else <code>Err</code></td></tr>
+<tr><td><code>parse(|s| …)</code> / <code>try_parse(|s| …)</code></td><td><code>T</code></td><td>…raised as <code>Error::Exit</code>; fails loud on a truncated capture</td></tr>
+</tbody></table>
+</div>
+<p><code>Err</code> from <code>output_string</code> itself means a stage couldn't be <em>started or
+driven</em> at all (spawn failure, broken plumbing) — never a mere non-zero exit.</p>
+<p>The streaming <code>first_line</code> probe is deliberately not a pipeline verb: a chain
+consumes its last stage in full to fold the pipefail outcome. To <em>capture</em> the
+first matching line of a finished chain, add a <code>| head -n1</code> (Unix) / <code>grep -m1</code>
+/ <code>findstr</code> stage and capture. This does <strong>not</strong> cover a streaming readiness
+probe over a chain that must keep running (e.g. wait for a banner line, then
+leave the chain alive) — <code>| head</code> would tear it down; use a single <code>Command</code>
+with <code>first_line</code> for that.</p>
+<p>The <code>|</code> operator is sugar for the same thing — <code>a | b | c</code> ≡
+<code>a.pipe(b).pipe(c)</code>. Parenthesize the chain before a terminal verb, since
+method calls bind tighter than <code>|</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+let authors = (Command::new("git").args(["log", "--format=%an"])
+    | Command::new("sort")
+    | Command::new("uniq").arg("-c"))
+    .run()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<h2 id="semantics-pipefail-and-the-ends"><a class="header" href="#semantics-pipefail-and-the-ends">Semantics: pipefail and the ends</a></h2>
+<p>The outcome is <strong>pipefail</strong>, like <code>set -o pipefail</code> in a shell:</p>
+<ul>
+<li><code>stdout</code> is always the <strong>last</strong> stage's output — that's what the chain
+produced.</li>
+<li><code>code</code>, <code>stderr</code>, and the reported program come from the <strong>first</strong> stage
+that didn't exit cleanly (non-zero, signal-killed, or timed out) — or from
+the last stage when every stage succeeded.</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+let result = Command::new("cat").arg("data.txt")
+    .pipe(Command::new("grep").arg("ERROR"))      // suppose grep exits 2 (bad pattern)
+    .pipe(Command::new("wc").arg("-l"))
+    .output_string()
+    .await?;
+
+// Diagnostics point at grep — the first unclean stage — while stdout is
+// whatever wc managed to print:
+assert_eq!(result.code(), Some(2));
+println!("blamed: {}", result.ensure_success().unwrap_err()); // names `grep`
+<span class="boring">}</span></code></pre></pre>
+<p>The ends of the chain behave like a single <code>Command</code>:</p>
+<ul>
+<li>The <strong>first</strong> stage's configured <a href="commands.html#standard-input"><code>stdin</code></a>
+source is honored — feed the whole pipeline from a string, file, or stream.</li>
+<li><strong>Inner</strong> stages read from the pipe, full stop: any <code>stdin</code> source or
+<code>keep_stdin_open</code> configured on them is overridden.</li>
+<li>Inner stages' <strong>stderr</strong> is captured per-stage for pipefail diagnostics;
+only the last stage's stdout reaches you.</li>
+</ul>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, Stdin};
+
+let unique_count = Command::new("sort")
+    .stdin(Stdin::from_iter_lines(["b", "a", "b", "c"]))
+    .pipe(Command::new("uniq"))
+    .pipe(Command::new("wc").arg("-l"))
+    .run()
+    .await?;
+assert_eq!(unique_count.trim(), "3");
+<span class="boring">}</span></code></pre></pre>
+<h2 id="unchecked-stages"><a class="header" href="#unchecked-stages">Unchecked stages</a></h2>
+<p>Strict pipefail has one classic false positive: a consumer that legitimately
+stops reading early. In <code>producer | head -1</code> the consumer exits <code>0</code> after one
+line and closes the pipe; the producer then stops on a <strong>broken pipe</strong> — its
+next write fails once the relay's downstream is gone (a broken-pipe write error,
+or <code>SIGPIPE</code> where the OS delivers it) — a perfectly normal death that strict
+pipefail would blame the chain for. Mark that stage <code>unchecked_in_pipe()</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+
+// seq 1 1000000 | head -1 — the producer's broken-pipe death is expected.
+let first = (Command::new("seq").args(["1", "1000000"]).unchecked_in_pipe()
+    | Command::new("head").args(["-n", "1"]))
+    .run()
+    .await?;
+assert_eq!(first.trim(), "1");
+<span class="boring">}</span></code></pre></pre>
+<p>The rules:</p>
+<ul>
+<li>An unchecked stage's unclean exit — a non-zero code, a broken-pipe write
+failure (or <code>SIGPIPE</code> where the OS delivers it) from a consumer that closed
+early, or its own per-stage timeout kill — is <strong>skipped</strong> when the chain
+decides what to report.</li>
+<li>A <strong>checked</strong> failure always trumps an unchecked one, regardless of
+position: <code>unchecked</code> never shields another stage's real failure.</li>
+<li>A chain whose only failures are unchecked reports <strong>success</strong> (the last
+stage's stdout, <code>code 0</code>).</li>
+<li><code>unchecked</code> forgives exit <em>status</em> only — never a whole-chain
+<a href="pipelines.html#timeouts"><code>Pipeline::timeout</code></a>, and it has no effect on a <code>Command</code> run
+outside a pipeline (a single run's status is already plain data in its
+<code>ProcessResult</code>).</li>
+</ul>
+<h2 id="timeouts"><a class="header" href="#timeouts">Timeouts</a></h2>
+<p>Two scopes, deliberately distinct:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+use std::time::Duration;
+
+let out = Command::new("producer")
+    .timeout(Duration::from_secs(10))      // per-STAGE: kills just `producer`
+    .pipe(Command::new("consumer"))
+    .timeout(Duration::from_secs(30))      // whole-CHAIN: Pipeline::timeout
+    .output_string()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<ul>
+<li><strong><code>Pipeline::timeout</code></strong> bounds the whole chain: at the deadline the shared
+group is torn down and the result reports <code>timed_out</code> (no partial stdout —
+unlike a single command's captured timeout).</li>
+<li>A <strong>per-stage <code>Command::timeout</code></strong> kills just that stage. Every stage is
+evaluated by the same pipefail rule: a stage that hit its own deadline —
+inner <em>or</em> last — surfaces on <code>run()</code> as that stage's <code>Error::Timeout</code>,
+reporting <strong>that stage's own deadline</strong> (not the chain's, and never <code>0ns</code>).</li>
+</ul>
+<p>Cancellation has two forms. <strong><code>Pipeline::cancel_on(token)</code></strong> is the chain-level
+control: the token is applied to every stage, so firing it tears the whole chain
+down and the run resolves to <code>Error::Cancelled</code>. (A <code>cancel_on</code> token on an
+individual stage <code>Command</code> also cancels that stage and errors the pipeline, but
+the pipeline-level builder is the clearer authority.) See
+<a href="timeouts-and-cancellation.html">Timeouts &amp; cancellation</a>.</p>
+<h2 id="re-running-a-pipeline"><a class="header" href="#re-running-a-pipeline">Re-running a pipeline</a></h2>
+<p>A <code>Pipeline</code> is <code>Clone</code> and re-runnable — stages are re-cloned per run. The
+one caveat is inherited from <code>Command</code>: a <strong>one-shot</strong> stdin source on the
+first stage (<code>Stdin::from_reader</code> / <code>from_lines</code>) is consumed by the first run;
+re-running then <strong>fails loud</strong> (an <code>Error::Io</code> at launch) rather than
+silently feeding empty stdin. Use the reusable sources
+(<code>from_string</code> / <code>from_bytes</code> / <code>from_iter_lines</code> / <code>from_file</code>) when a chain
+runs more than once.</p>
+<hr />
+<p>Next: <a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a> ·
+<a href="commands.html">Running commands</a> ·
+<a href="process-groups.html">Process groups</a></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="timeouts-retries--cancellation"><a class="header" href="#timeouts-retries--cancellation">Timeouts, retries &amp; cancellation</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p>Three ways a run ends early, with three different philosophies:</p>
+<ul>
+<li>
+<p>a <strong>timeout</strong> is <em>data</em> — the deadline was part of the run's contract, so
+its expiry is captured in the result (and only the success-checking verbs
+turn it into an error);</p>
+</li>
+<li>
+<p>a <strong>retry</strong> is a <em>policy</em> — the success-checking verbs replay the run while
+your classifier says the failure is transient;</p>
+</li>
+<li>
+<p>a <strong>cancellation</strong> is an <em>abandonment</em> — the caller
+changed its mind, so every path reports an error; there is no result worth
+inspecting.</p>
+</li>
+<li>
+<p><a href="timeouts-and-cancellation.html#timeouts">Timeouts</a></p>
+</li>
+<li>
+<p><a href="timeouts-and-cancellation.html#retries">Retries</a></p>
+</li>
+<li>
+<p><a href="timeouts-and-cancellation.html#cancellation">Cancellation</a></p>
+</li>
+<li>
+<p><a href="timeouts-and-cancellation.html#precedence-and-interactions">Precedence and interactions</a></p>
+</li>
+</ul>
+<h2 id="timeouts-1"><a class="header" href="#timeouts-1">Timeouts</a></h2>
+<p><code>Command::timeout(d)</code> kills the <strong>whole process tree</strong> at the deadline — not
+just the direct child, so a wrapper script's grandchildren die too.</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+use std::time::Duration;
+
+// Captured: inspect the flag yourself.
+let result = Command::new("slow-tool")
+    .timeout(Duration::from_secs(5))
+    .output_string()
+    .await?;
+if result.timed_out() {
+    println!("partial output before the kill: {}", result.stdout());
+}
+
+// Raised: the checking verbs convert the flag into a typed error.
+let err = Command::new("slow-tool")
+    .timeout(Duration::from_secs(5))
+    .run()
+    .await
+    .unwrap_err();
+assert!(matches!(err, processkit::Error::Timeout { .. }));
+<span class="boring">}</span></code></pre></pre>
+<p>Where each verb lands:</p>
+<div class="table-wrapper"><table><thead><tr><th>Verb</th><th>Deadline expiry becomes</th></tr></thead><tbody>
+<tr><td><code>output_string()</code> / <code>output_bytes()</code></td><td><code>Ok</code> result with <code>timed_out() == true</code>, <code>code() == None</code>, partial output kept</td></tr>
+<tr><td><code>run()</code> / <code>exit_code()</code> / <code>probe()</code> / <code>checked()</code></td><td><code>Error::Timeout { program, timeout, stdout, stderr }</code> — the partial output captured before the kill is attached (<code>err.diagnostic()</code> surfaces a hung tool's last words)</td></tr>
+<tr><td><code>first_line(pred)</code></td><td><code>Error::Timeout</code> (the line never arrived in time)</td></tr>
+<tr><td><code>start()</code> + streaming</td><td>the stream <strong>ends</strong> at the deadline (tree killed, pipes closed); <code>finish</code> then reports the kill (<code>outcome == Outcome::TimedOut</code>)</td></tr>
+<tr><td><code>ensure_success()</code> on a captured result</td><td><code>Error::Timeout</code>, checked <em>before</em> the exit code</td></tr>
+<tr><td><a href="pipelines.html#timeouts"><code>Pipeline</code></a></td><td>chain deadline → <code>timed_out</code> result; per-stage deadlines fold into pipefail</td></tr>
+</tbody></table>
+</div>
+<p>Two distinct deadline families to keep apart:</p>
+<ul>
+<li><code>Command::timeout</code> — the run's own contract, this section.</li>
+<li>The <a href="streaming.html#readiness-probes">readiness probes</a>' <code>within</code> parameter —
+gives <code>Error::NotReady</code> and <strong>never kills the child</strong>.</li>
+</ul>
+<h3 id="graceful-timeout"><a class="header" href="#graceful-timeout">Graceful timeout</a></h3>
+<p>By default the deadline <strong>hard-kills</strong> at once. Add <code>timeout_grace(d)</code> to give the
+tree a chance to clean up: at the deadline it is sent <code>SIGTERM</code> (or the signal chosen
+with <code>timeout_signal</code>, which needs the <code>process-control</code> feature), allowed up to the
+grace window to exit, then <code>SIGKILL</code>ed — the same SIGTERM → wait → SIGKILL tier as
+<a href="process-groups.html"><code>ProcessGroup::shutdown</code></a>. A signal-handling child that exits ends
+the grace early.</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+use std::time::Duration;
+
+let result = Command::new("slow-tool")
+    .timeout(Duration::from_secs(30))
+    .timeout_grace(Duration::from_secs(5)) // SIGTERM, wait up to 5s, then SIGKILL
+    .output_string()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p><code>timed_out()</code> is <code>true</code> regardless of whether the child exited on the signal or was
+<code>SIGKILL</code>ed after the grace — the deadline is what fired. <strong>Windows</strong> has no signal
+tier: <code>timeout_grace</code> is accepted but the deadline kills the job atomically.</p>
+<p>The explicit <code>RunningProcess::shutdown(grace)</code> verb (stop a started handle on demand)
+composes with a <code>Command::timeout</code>: its own SIGTERM → grace → SIGKILL is the
+<strong>single</strong> teardown (it does not also fire the run's timeout teardown), and if the
+deadline has <strong>already elapsed</strong> when you call <code>shutdown</code>, the outcome is reported as
+<code>Outcome::TimedOut</code> — the <code>grace</code> you pass governs the teardown timing.</p>
+<h2 id="retries"><a class="header" href="#retries">Retries</a></h2>
+<p><code>retry(max_attempts, backoff, classifier)</code> replays a failed run — up to
+<code>max_attempts</code> <strong>total</strong> attempts, sleeping <code>backoff</code> between tries, retrying
+only while the classifier accepts the error:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, Error};
+use std::time::Duration;
+
+let out = Command::new("curl")
+    .args(["-fsS", "https://example.com/api"])
+    .timeout(Duration::from_secs(10))
+    .retry(3, Duration::from_millis(250), |e| {
+        // transient: network timeouts and curl's "couldn't connect" (7)
+        matches!(e, Error::Timeout { .. })
+            || matches!(e, Error::Exit { code: 7, .. })
+    })
+    .run()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p>Ground rules:</p>
+<ul>
+<li>Retries apply to the <strong>success-checking</strong> paths only (<code>run</code>, <code>exit_code</code>,
+<code>probe</code>, <code>ProcessRunnerExt::checked</code> — and everything built on them, e.g.
+<code>CliClient</code>). The non-erroring <code>output_string</code> capture never retries: it
+didn't fail.</li>
+<li>The classifier sees the typed error — match on variants, codes, even the
+captured stderr.</li>
+<li>Each attempt re-runs the <em>same</em> <code>Command</code>: a one-shot stdin source
+(<a href="commands.html#standard-input">table</a>) is consumed by attempt #1, so attempt #2
+<strong>fails loud</strong> with an <code>Error::Io</code> (<code>InvalidInput</code>) at launch rather than
+silently feeding empty stdin. Use reusable sources for retried commands.</li>
+<li>A <code>Cancelled</code> error is <strong>never retried</strong>, classifier or not — the token
+stays cancelled forever, so another attempt could only fail the same way.</li>
+</ul>
+<p>For "keep it alive" (restart a <em>service</em> whenever it exits) rather than
+"replay this one operation", use a <a href="supervision.html"><code>Supervisor</code></a> — same
+backoff shape, different loop condition.</p>
+<h2 id="cancellation"><a class="header" href="#cancellation">Cancellation</a></h2>
+<p>Hand any command a <code>CancellationToken</code> (re-exported at the crate root);
+cancelling the token kills the run's tree and makes every consuming path
+report <code>Error::Cancelled</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::{CancellationToken, Command};
+
+#[tokio::main]
+async fn main() -&gt; processkit::Result&lt;()&gt; {
+    let shutdown = CancellationToken::new();
+
+    // Wire the same parent token into many jobs via child tokens:
+    let job = tokio::spawn({
+        let token = shutdown.child_token();
+        async move {
+            Command::new("long-export").cancel_on(token).run().await
+        }
+    });
+
+    // Ctrl-C handler, sibling failure, UI button, …
+    shutdown.cancel();
+
+    assert!(matches!(
+        job.await.unwrap(),
+        Err(processkit::Error::Cancelled { .. })
+    ));
+    Ok(())
+}</code></pre></pre>
+<p>The contract, path by path:</p>
+<div class="table-wrapper"><table><thead><tr><th>Situation</th><th>Behavior</th></tr></thead><tbody>
+<tr><td>Cancel during <code>run</code> / <code>output_string</code> / <code>output_bytes</code> / <code>wait</code> / <code>profile</code> / <code>exit_code</code> / <code>probe</code></td><td>tree killed, <code>Error::Cancelled { program }</code></td></tr>
+<tr><td>Cancel during streaming (<code>stdout_lines</code>)</td><td>the stream <strong>ends</strong>; the following <code>finish</code> reports <code>Error::Cancelled</code></td></tr>
+<tr><td>Token already cancelled before the run</td><td>short-circuits <strong>before spawning</strong> — no process is ever created</td></tr>
+<tr><td>Cancel on a shared-<code>ProcessGroup</code> handle</td><td>kills the child itself, leaves the group's siblings alone (same scope as a timeout)</td></tr>
+<tr><td>A <code>Pipeline</code> stage's token cancels</td><td>that stage dies; the cancellation errors the whole pipeline and the private group reaps the other stages</td></tr>
+<tr><td>Under <code>retry</code></td><td>terminal — never retried, whatever the classifier says</td></tr>
+<tr><td>Under a <a href="supervision.html"><code>Supervisor</code></a></td><td>terminal — supervision returns <code>Err(Cancelled)</code> instead of restarting into a still-cancelled token</td></tr>
+<tr><td><code>wait_any</code> mid-run</td><td>the raw primitive doesn't synthesize the error — the race just resolves (a <em>pre-cancelled</em> token still hits the pre-spawn short-circuit)</td></tr>
+<tr><td><code>first_line</code> mid-run</td><td>surfaces <code>Error::Cancelled</code> once the token fires — a cancelled stream that closes without a match is reported as cancellation, not <code>Ok(None)</code></td></tr>
+</tbody></table>
+</div>
+<h3 id="client-level-default"><a class="header" href="#client-level-default">Client-level default</a></h3>
+<p>A typed wrapper built on <a href="testing.html#wrapping-a-cli-tool"><code>CliClient</code></a> usually constructs
+and consumes its <code>Command</code>s internally — there is no place to chain a
+per-call <code>cancel_on</code>. Set the token <strong>once on the client</strong>; every command it
+builds carries it:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{CancellationToken, CliClient};
+
+let token = CancellationToken::new();
+let gh = CliClient::new("gh").default_cancel_on(token.child_token());
+// ... controller cancels `token` → every in-flight command of THIS client
+// dies (whole tree), surfacing Error::Cancelled to the awaiting call.
+<span class="boring">}</span></code></pre></pre>
+<p>Clients are cheap — scope cancellation by building <strong>one client per
+cancellable scope</strong> with its own (child) token, instead of threading tokens
+through call signatures. <code>cli_client!</code>-generated wrappers re-emit the builder,
+so <code>Git::new().default_cancel_on(t)</code> works for downstream crates too.</p>
+<p><strong>Precedence:</strong> a per-command <code>cancel_on</code> chained on a built command
+<em>replaces</em> the client default (explicit beats default, like a per-command
+<code>timeout</code> after <code>default_timeout</code>). To honor <strong>both</strong> sources, wire it
+explicitly — <code>CancellationToken</code> has no built-in merge: derive a child of the
+default (<code>let c = default.child_token()</code>), hand the command
+<code>cancel_on(c.clone())</code>, and have the second source call <code>c.cancel()</code>. Or
+simpler: build a dedicated client per scope.</p>
+<h2 id="precedence-and-interactions"><a class="header" href="#precedence-and-interactions">Precedence and interactions</a></h2>
+<p><strong>Timeout vs. cancellation.</strong> A timeout is <em>captured</em>; a cancellation is
+<em>always an error</em>. When both land on the same run, <strong>cancellation wins</strong> —
+you asked the run to stop mattering, so no result is synthesized:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{CancellationToken, Command};
+use std::time::Duration;
+
+let token = CancellationToken::new();
+token.cancel();
+
+let err = Command::new("tool")
+    .timeout(Duration::from_millis(1))   // would have been a Timeout…
+    .cancel_on(token)                    // …but cancellation takes priority
+    .run()
+    .await
+    .unwrap_err();
+assert!(matches!(err, processkit::Error::Cancelled { .. }));
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Which knob for which job:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>You want</th><th>Reach for</th></tr></thead><tbody>
+<tr><td>"This run may not take longer than X"</td><td><code>Command::timeout</code></td></tr>
+<tr><td>"This operation is flaky, try a few times"</td><td><code>Command::retry</code></td></tr>
+<tr><td>"Stop everything when the app shuts down"</td><td><code>cancel_on</code> + one shared token</td></tr>
+<tr><td>"Keep this service alive across crashes"</td><td><a href="supervision.html"><code>Supervisor</code></a></td></tr>
+<tr><td>"Tell me when it's <em>ready</em>, don't kill it"</td><td><a href="streaming.html#readiness-probes">readiness probes</a></td></tr>
+</tbody></table>
+</div>
+<hr />
+<p>Next: <a href="supervision.html">Supervision</a> ·
+<a href="streaming.html">Streaming &amp; interactive I/O</a> ·
+<a href="commands.html">Running commands</a></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="supervision"><a class="header" href="#supervision">Supervision</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p>Where <a href="timeouts-and-cancellation.html#retries"><code>retry</code></a> answers <em>"run this once,
+replaying on failure"</em>, a <code>Supervisor</code> answers the different question <em>"keep
+this alive"</em>: restart a child per policy whenever it exits, with bounded
+restarts, exponential backoff, and jitter — a minimal <code>runit</code>/<code>systemd</code>-style
+keeper, platform-agnostic because it sits entirely on the
+<a href="testing.html#the-processrunner-seam"><code>ProcessRunner</code> seam</a>.</p>
+<ul>
+<li><a href="supervision.html#the-shape">The shape</a></li>
+<li><a href="supervision.html#policies-what-counts-as-a-crash">Policies: what counts as a crash</a></li>
+<li><a href="supervision.html#backoff-and-jitter">Backoff and jitter</a></li>
+<li><a href="supervision.html#failure-storms">Failure storms</a></li>
+<li><a href="supervision.html#stopping">Stopping</a></li>
+<li><a href="supervision.html#outcomes">Outcomes</a></li>
+<li><a href="supervision.html#supervising-inside-a-shared-group">Supervising inside a shared group</a></li>
+<li><a href="supervision.html#errors-and-cancellation">Errors and cancellation</a></li>
+</ul>
+<h2 id="the-shape"><a class="header" href="#the-shape">The shape</a></h2>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::{Command, RestartPolicy, Supervisor};
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -&gt; processkit::Result&lt;()&gt; {
+    let outcome = Supervisor::new(Command::new("my-server").args(["--port", "8080"]))
+        .restart(RestartPolicy::OnCrash)           // default
+        .max_restarts(5)                           // default: unlimited
+        .backoff(Duration::from_millis(200), 2.0)  // default: 200ms × 2.0
+        .max_backoff(Duration::from_secs(30))      // default: 30s cap
+        .jitter(true)                              // default: on
+        .stop_when(|res| res.code() == Some(0))    // optional exit condition
+        .run()
+        .await?;
+
+    println!(
+        "ended after {} restarts, reason: {:?}, last exit: {:?}",
+        outcome.restarts, outcome.stopped, outcome.final_result.code(),
+    );
+    Ok(())
+}</code></pre></pre>
+<p>Each <em>incarnation</em> is one full captured run of the command (so the command's
+own <code>timeout</code>, stdin, env, … all apply per run — with the usual
+<a href="commands.html#standard-input">one-shot-stdin caveat</a> for the second run
+onward).</p>
+<h2 id="policies-what-counts-as-a-crash"><a class="header" href="#policies-what-counts-as-a-crash">Policies: what counts as a crash</a></h2>
+<p>A <strong>crash</strong> is any run that is not a <em>success</em> (<code>ProcessResult::is_success</code>,
+which honors the command's <code>ok_codes</code>): an exit code outside the accepted set
+(default <code>{0}</code>), a timeout, a signal-kill, or a spawn failure. A command with
+<code>ok_codes([0, 2])</code> that exits <code>2</code> is a success, so <code>OnCrash</code> treats it as clean,
+not a crash.</p>
+<div class="table-wrapper"><table><thead><tr><th><code>RestartPolicy</code></th><th>Restarts after…</th></tr></thead><tbody>
+<tr><td><code>OnCrash</code> <em>(default)</em></td><td>crashes only; a clean exit ends supervision (<code>PolicySatisfied</code>)</td></tr>
+<tr><td><code>Always</code></td><td>every completed run, clean or not — pair it with <code>stop_when</code>/<code>max_restarts</code> or it loops forever</td></tr>
+<tr><td><code>Never</code></td><td>nothing: one run, reported as-is</td></tr>
+</tbody></table>
+</div>
+<h2 id="backoff-and-jitter"><a class="header" href="#backoff-and-jitter">Backoff and jitter</a></h2>
+<p>The <em>n</em>-th restart (0-based) sleeps</p>
+<pre><code class="language-text">delay(n) = min(base × factor^n, max_backoff) × jitter
+</code></pre>
+<p>with <code>jitter</code> drawn uniformly from <code>[0.5, 1.5)</code> per restart. Jitter is <strong>on by
+default</strong> so a fleet of supervised workers restarted by the same incident
+doesn't stampede back in lockstep; <code>jitter(false)</code> gives deterministic delays
+(useful in tests with a paused tokio clock). A non-finite or <code>&lt; 1.0</code> factor is
+treated as <code>1.0</code> — constant delay, never a shrinking one.</p>
+<pre><code class="language-text">base=200ms, factor=2.0, cap=30s:
+restart #0 → ~200ms   #1 → ~400ms   #2 → ~800ms … #7 → ~25.6s   #8+ → 30s (cap)
+</code></pre>
+<h2 id="failure-storms"><a class="header" href="#failure-storms">Failure storms</a></h2>
+<p>Backoff spaces <em>individual</em> restarts; <code>max_restarts</code> is a <em>lifetime</em> cap.
+Neither distinguishes a service that fails once a day from one that is
+suddenly crash-looping. The opt-in <strong>storm guard</strong> does (a design borrowed
+from Go's <a href="https://github.com/thejerf/suture"><code>suture</code></a> supervisor — the
+idea, not the code):</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, Supervisor};
+use std::time::Duration;
+
+let outcome = Supervisor::new(Command::new("worker"))
+    .storm_pause(Duration::from_secs(15))     // master switch — off by default
+    .failure_decay(Duration::from_secs(30))   // score half-life (default 30s)
+    .failure_threshold(5.0)                   // trip point (default 5.0)
+    .run()
+    .await?;
+
+println!("storm pauses taken: {}", outcome.storm_pauses);
+<span class="boring">}</span></code></pre></pre>
+<p>Each failed run adds <code>1</code> to a score that <strong>halves every <code>failure_decay</code></strong>:</p>
+<pre><code class="language-text">score = score × 0.5^(Δt / failure_decay) + 1
+</code></pre>
+<ul>
+<li><em>Fails rarely</em>: the score decays back toward <code>1</code> between failures and never
+reaches the threshold — the guard stays out of the way.</li>
+<li><em>Failure storm</em>: failures arrive faster than the half-life drains them, the
+score climbs past <code>failure_threshold</code>, and the supervisor takes <strong>one
+collective pause</strong> of <code>storm_pause</code> (jittered into <code>[0.5, 1.5)</code> like the
+backoff), resets the score, and resumes.</li>
+</ul>
+<p>Only failures feed the score — crashes and spawn errors, not clean exits
+restarted under <code>RestartPolicy::Always</code>. The pause stacks with (runs before)
+the per-restart backoff, and the <code>max_restarts</code> budget is checked first, so a
+storm pause never extends an exhausted budget. Pauses taken are reported in
+<code>SupervisionOutcome::storm_pauses</code>.</p>
+<h2 id="stopping"><a class="header" href="#stopping">Stopping</a></h2>
+<p>Three gates, checked in this order after every completed run:</p>
+<ol>
+<li><strong><code>stop_when(predicate)</code></strong> — sees the run's <code>ProcessResult</code>; returning
+<code>true</code> ends supervision <em>regardless of policy</em> (→ <code>StopReason::Predicate</code>).
+"Exit 0 is done, anything else is a crash" is the classic:
+<code>stop_when(|res| res.code() == Some(0))</code> under <code>RestartPolicy::Always</code>.</li>
+<li><strong>The policy</strong> — <code>OnCrash</code> stops on a clean exit (→ <code>PolicySatisfied</code>).</li>
+<li><strong><code>max_restarts(n)</code></strong> — at most <em>n</em> restarts = <em>n + 1</em> total runs; an
+exhausted budget reports the last result (→ <code>RestartsExhausted</code>).
+<code>max_restarts(0)</code> means exactly one run.</li>
+</ol>
+<h2 id="outcomes"><a class="header" href="#outcomes">Outcomes</a></h2>
+<p><code>run()</code> resolves to a <code>SupervisionOutcome</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>let outcome = Supervisor::new(Command::new("job")).run().await?;
+
+outcome.final_result; // ProcessResult&lt;String&gt; of the LAST run
+outcome.restarts;     // how many restarts happened (not counting run #1)
+outcome.stopped;      // StopReason::{Predicate, PolicySatisfied, RestartsExhausted}
+outcome.storm_pauses; // failure-storm pauses taken (0 unless storm_pause is set)
+<span class="boring">}</span></code></pre></pre>
+<p>Note <code>run()</code> returning <code>Ok</code> does <strong>not</strong> mean the child succeeded — it means
+supervision <em>concluded</em>. Inspect <code>final_result</code> (or <code>ensure_success()</code> it) for
+the child's own verdict.</p>
+<h2 id="supervising-inside-a-shared-group"><a class="header" href="#supervising-inside-a-shared-group">Supervising inside a shared group</a></h2>
+<p>The supervisor runs through any <code>ProcessRunner</code>. The headline production
+variant injects a <a href="process-groups.html"><code>ProcessGroup</code></a> so every incarnation —
+and everything it spawns — lives in one kill-on-drop container:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessGroup, RestartPolicy, Supervisor};
+
+let group = ProcessGroup::new()?;
+
+let outcome = Supervisor::new(Command::new("worker"))
+    .with_runner(&amp;group)                 // &amp;group is itself a ProcessRunner
+    .restart(RestartPolicy::OnCrash)
+    .max_restarts(10)
+    .run()
+    .await?;
+
+// The group outlives supervision: drop it (or shutdown) to reap any strays.
+<span class="boring">}</span></code></pre></pre>
+<p>Mind one interaction: don't supervise into a group you've
+<a href="process-groups.html#suspending-and-resuming">suspended</a> — under the cgroup
+mechanism the restarted child would start frozen (and the spawn itself can
+block). Resume first.</p>
+<p>The same injection point makes supervision logic <strong>hermetically testable</strong> —
+script a sequence of fake results and assert the restart/stop behavior with
+no real process; see <a href="testing.html#scripting-replies">Testing your code</a>.</p>
+<h2 id="errors-and-cancellation"><a class="header" href="#errors-and-cancellation">Errors and cancellation</a></h2>
+<p>A run that produces no result at all (spawn/IO failure) can't be judged by
+<code>stop_when</code>; the policy treats it as a crash and restarts (with backoff)
+unless the policy is <code>Never</code> or the budget is exhausted — then the error
+itself surfaces as <code>run()</code>'s <code>Err</code>.</p>
+<p>A <a href="timeouts-and-cancellation.html#cancellation">cancelled</a> incarnation is
+<strong>terminal</strong>: <code>run()</code> returns
+<code>Err(Error::Cancelled)</code> immediately. The token never un-cancels, so a restart
+could only produce another instantly-cancelled run — the supervisor refuses
+the futile loop.</p>
+<hr />
+<p>Next: <a href="testing.html">Testing your code</a> ·
+<a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a> ·
+<a href="process-groups.html">Process groups</a></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="testing-your-code"><a class="header" href="#testing-your-code">Testing your code</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p>Code that shells out is miserable to test — unless the subprocess is behind a
+seam. In <code>processkit</code> that seam is one small trait. Only <code>output_string</code> is required;
+<code>output_bytes</code> (raw-byte stdout) and <code>start</code> (a live handle for streaming/probes)
+are <strong>defaulted</strong>, so a minimal double implements just <code>output_string</code>:</p>
+<pre><code class="language-rust ignore">#[async_trait]
+pub trait ProcessRunner: Send + Sync {
+    async fn output_string(&amp;self, command: &amp;Command) -&gt; Result&lt;ProcessResult&lt;String&gt;&gt;;
+    // Defaulted (route through `start`); override for byte/streaming support:
+    async fn output_bytes(&amp;self, command: &amp;Command) -&gt; Result&lt;ProcessResult&lt;Vec&lt;u8&gt;&gt;&gt;;
+    async fn start(&amp;self, command: &amp;Command) -&gt; Result&lt;RunningProcess&gt;;
+}</code></pre>
+<p>Production code takes a runner (generically or as <code>&amp;dyn ProcessRunner</code>); tests
+hand it a double. Four doubles ship with the crate, plus a macro that makes
+whole CLI wrappers testable for free.</p>
+<ul>
+<li><a href="testing.html#the-processrunner-seam">The <code>ProcessRunner</code> seam</a></li>
+<li><a href="testing.html#scripting-replies">Scripting replies: <code>ScriptedRunner</code></a></li>
+<li><a href="testing.html#asserting-invocations">Asserting invocations: <code>RecordingRunner</code></a></li>
+<li><a href="testing.html#expectation-style-mockrunner">Expectation-style: <code>MockRunner</code></a></li>
+<li><a href="testing.html#recordreplay-cassettes">Record/replay cassettes: <code>RecordReplayRunner</code></a></li>
+<li><a href="testing.html#wrapping-a-cli-tool">Wrapping a CLI tool: <code>CliClient</code></a></li>
+</ul>
+<h2 id="the-processrunner-seam"><a class="header" href="#the-processrunner-seam">The <code>ProcessRunner</code> seam</a></h2>
+<p><code>JobRunner</code> is the real implementation (each run in a fresh private group); a
+<a href="process-groups.html"><code>ProcessGroup</code></a> is <em>also</em> a runner (runs land in that
+shared group); and <code>impl ProcessRunner for &amp;R</code> means a <strong>borrowed</strong> runner
+works wherever an owned one does — inject <code>&amp;group</code> or <code>&amp;recording</code> without
+giving ownership away.</p>
+<p>Every runner — real or double — gets the convenience helpers of
+<code>ProcessRunnerExt</code> for free: <code>run</code> (trimmed stdout, success required),
+<code>run_unit</code>, <code>exit_code</code>, <code>probe</code> (exit code as a boolean), <code>checked</code>
+(success-checked full result), and <code>parse</code>/<code>try_parse</code> (feed stdout to a
+closure; like <code>first_line</code>, generic over the closure so unavailable on a
+<code>&amp;dyn ProcessRunner</code>). <a href="timeouts-and-cancellation.html#retries">Retry
+policies</a> work through the seam too, so
+a double exercises your retry handling hermetically.</p>
+<p>The seam covers <strong>streaming as well as bulk runs</strong>: <code>ProcessRunner::start</code>
+returns a live <code>RunningProcess</code>, and a <code>ScriptedRunner</code>'s <code>start</code> hands back a
+scripted handle whose canned lines flow through the same pump machinery a real
+child uses — <code>stdout_lines</code>, <code>wait_for_line</code>, and <code>finish</code> behave
+identically, with no subprocess (see
+<a href="testing.html#scripted-streaming">Scripted streaming</a> below). An <code>output_string</code>-only custom
+runner keeps compiling: <code>start</code> is defaulted to <code>Error::Unsupported</code>.</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessRunner, ProcessRunnerExt, Result};
+
+// Production code: generic over the runner.
+async fn current_branch(runner: &amp;impl ProcessRunner) -&gt; Result&lt;String&gt; {
+    runner
+        .run(&amp;Command::new("git").args(["branch", "--show-current"]))
+        .await
+}
+<span class="boring">}</span></code></pre></pre>
+<h2 id="scripting-replies"><a class="header" href="#scripting-replies">Scripting replies</a></h2>
+<p><code>ScriptedRunner</code> returns canned <code>Reply</code>s for matched commands — the
+work-horse double:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessRunnerExt};
+use processkit::testing::{Reply, ScriptedRunner};
+
+#[tokio::test]
+async fn detects_the_branch() {
+    let runner = ScriptedRunner::new()
+        // Match by program + argument PREFIX (element-wise; first element is
+        // the program name, in registration order):
+        .on(["git", "branch", "--show-current"], Reply::ok("main\n"))
+        // …or by any predicate over the full Command:
+        .when(
+            |cmd| cmd.working_dir().is_some(),
+            Reply::fail(128, "fatal: not a git repository"),
+        )
+        // …with an optional catch-all:
+        .fallback(Reply::ok(""));
+
+    assert_eq!(current_branch(&amp;runner).await.unwrap(), "main");
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The pieces:</p>
+<ul>
+<li><strong><code>Reply::ok(stdout)</code></strong> — exit 0. <strong><code>Reply::fail(code, stderr)</code></strong> — non-zero
+with stderr. <strong><code>Reply::lines(["a", "b"])</code></strong> — exit 0 with the lines joined
+(and streamed one by one on a scripted <a href="testing.html#scripted-streaming"><code>start</code></a>).
+<strong><code>Reply::timeout()</code></strong> — a timed-out run (the checking helpers raise
+<code>Error::Timeout</code> from it, carrying the command's own configured deadline). On a
+scripted <a href="testing.html#scripted-streaming"><code>start</code></a> it resolves <em>immediately</em> as timed-out;
+to exercise a real deadline race, use <code>Reply::pending()</code> + a <code>Command::timeout</code>.
+<strong><code>.with_stdout(text)</code></strong> — attach stdout to any of them (e.g. the
+<code>CONFLICT …</code> text git prints on a failing merge).
+<strong><code>.with_line_delay(d)</code></strong> — pace a scripted stream's lines.</li>
+<li><strong><code>Reply::pending()</code></strong> — parks the call until the
+command's cancellation token (per-command <code>cancel_on</code> or the client-level
+<a href="timeouts-and-cancellation.html#client-level-default"><code>default_cancel_on</code></a>)
+fires, then resolves with <code>Error::Cancelled</code> — so a test can prove an
+orchestration <em>actually cancels</em> a blocked call, not just that it formats a
+canned error. With no token it parks forever, like a hung child.</li>
+<li>Rules are tried in <strong>registration order</strong>; first match wins. Prefix
+matching is element-wise over the <strong>program name then the arguments</strong> (the
+first element is the program) — <code>on(["git", "foo"])</code> matches <code>git foo bar</code>
+but not <code>git foobar</code> (and not <code>rm foo</code>). Use
+<a href="https://docs.rs/processkit"><code>on_sequence</code></a> to serve an ordered sequence of
+replies (each once, then the last repeats) for a fail-then-succeed scenario.</li>
+<li><strong>No match and no fallback is a loud error</strong> (<code>Error::Spawn</code>, not-found) —
+an unexpected invocation can't slip through a test silently.</li>
+<li>Bulk runs also <strong>replay the canned lines through the command's
+<code>on_stdout_line</code>/<code>on_stderr_line</code> handlers</strong>, so a wrapper's
+progress-reporting path is exercised without a subprocess.</li>
+</ul>
+<h2 id="scripted-streaming"><a class="header" href="#scripted-streaming">Scripted streaming</a></h2>
+<p><code>ScriptedRunner::start</code> returns a live <code>RunningProcess</code> backed by the canned
+reply instead of an OS child. The canned stdout/stderr feed the <strong>same pump
+machinery</strong> a real child uses, so the whole streaming surface works
+hermetically — <code>stdout_lines</code> yields the lines, <code>wait_for_line</code> probes them,
+<code>finish</code> reports the canned outcome and stderr:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, Outcome, ProcessRunner, StreamExt, Finished};
+use processkit::testing::{Reply, ScriptedRunner};
+use std::time::Duration;
+
+#[tokio::test]
+async fn server_becomes_ready() {
+    let runner = ScriptedRunner::new()
+        .on(["server", "serve"], Reply::lines(["booting", "listening on 8080"]));
+
+    let mut run = runner.start(&amp;Command::new("server").arg("serve")).await.unwrap();
+    run.wait_for_line(|l| l.contains("listening"), Duration::from_secs(5))
+        .await
+        .unwrap(); // satisfied by the canned banner — no subprocess
+
+    let Finished { outcome, .. } = run.finish().await.unwrap();
+    assert_eq!(outcome, Outcome::Exited(0));
+}
+<span class="boring">}</span></code></pre></pre>
+<p><code>Reply::lines([...])</code> scripts the stdout lines; <code>.with_line_delay(d)</code> paces
+them (deterministic under <code>#[tokio::test(start_paused = true)]</code>), and the
+scripted run "exits" after the last line. The honest boundaries: a scripted
+handle has no OS identity (<code>pid()</code> is <code>None</code>, <code>profile</code> reports empty
+samples), does not compose into a real <code>Pipeline</code>, and does not model
+interactive stdin. <code>Reply::pending()</code> scripts a run that never exits on its
+own — cancel or time it out through the command's own knobs. A command
+<code>timeout</code> <em>does</em> bound a scripted stream (it ends at the deadline and reports
+<code>Outcome::TimedOut</code>, like a real child), but a scripted handle has no signal
+tier, so — like on Windows — it ignores <code>timeout_grace</code> and ends at once.</p>
+<h2 id="asserting-invocations"><a class="header" href="#asserting-invocations">Asserting invocations</a></h2>
+<p><code>RecordingRunner</code> wraps another runner and records every <code>Invocation</code> — what
+was <em>asked</em> — so a test asserts inputs, not just outputs:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessRunnerExt};
+use processkit::testing::{RecordingRunner, Reply, ScriptedRunner};
+
+#[tokio::test]
+async fn passes_the_right_flags() {
+    let runner = RecordingRunner::new(
+        ScriptedRunner::new().fallback(Reply::ok("done")),
+    );
+
+    runner
+        .run(&amp;Command::new("gh").args(["pr", "create", "--draft"]).current_dir("/repo"))
+        .await
+        .unwrap();
+
+    let call = runner.only_call(); // panics unless exactly one call
+    assert_eq!(call.args_str(), ["pr", "create", "--draft"]);
+    assert!(call.has_flag("--draft"));
+    assert_eq!(call.cwd.as_deref().map(|c| c.to_str().unwrap()), Some("/repo"));
+    assert!(!call.has_stdin);
+}
+<span class="boring">}</span></code></pre></pre>
+<p>An <code>Invocation</code> captures the <em>routing</em> knobs — <code>program</code>, <code>args</code>, <code>cwd</code>,
+<code>envs</code> (explicit overrides, <code>None</code> = removal), <code>has_stdin</code> — not the
+I/O-shaping ones (timeout, encodings, buffer policy); assert those through a
+<code>when</code> predicate over the <code>Command</code> itself. <code>calls()</code> returns the full list
+when more than one run is expected.</p>
+<h2 id="expectation-style-mockrunner"><a class="header" href="#expectation-style-mockrunner">Expectation-style: <code>MockRunner</code></a></h2>
+<p>With the <strong><code>mock</code></strong> feature, <code>mockall</code> generates a <code>MockRunner</code> for
+expectation-style tests (call counts, argument matchers, ordered
+expectations) — the right tool when the <em>interaction</em> is the contract.</p>
+<blockquote>
+<p><strong>Note:</strong> <code>MockRunner</code>'s <code>expect_*</code> surface is generated by <code>mockall</code> and is
+<strong>exempt from this crate's semver guarantees</strong> — it tracks the <code>mockall</code>
+dependency, not a frozen API. For a stable double, prefer <code>ScriptedRunner</code>
+(canned replies) or <code>RecordingRunner</code> (input assertions) above.</p>
+</blockquote>
+<pre><code class="language-rust ignore">use processkit::testing::MockRunner;
+
+let mut mock = MockRunner::new();
+mock.expect_output_string()
+    .times(1)
+    .returning(|_cmd| /* build a Result&lt;ProcessResult&lt;String&gt;&gt; */ …);</code></pre>
+<blockquote>
+<p><strong><code>MockRunner</code> does not inherit the defaults.</strong> Unlike a hand-written runner
+(where <code>output_bytes</code>/<code>start</code> are defaulted), <code>mockall::automock</code> replaces
+<strong>every</strong> method with an expectation — so a verb that routes through <code>start</code> or
+<code>output_bytes</code> needs its own <code>expect_start()</code> / <code>expect_output_bytes()</code>, or the
+unset call panics ("no expectation"). <code>ScriptedRunner</code> provides the defaults and
+the streaming seam out of the box.</p>
+</blockquote>
+<p>For most tests <code>ScriptedRunner</code>/<code>RecordingRunner</code> read better; reach for the
+mock when you need <code>mockall</code>'s matching machinery.</p>
+<h2 id="recordreplay-cassettes"><a class="header" href="#recordreplay-cassettes">Record/replay cassettes</a></h2>
+<p>With the <strong><code>record</code></strong> feature, <code>RecordReplayRunner</code> closes the loop: record
+real runs to a JSON <em>cassette</em> once, then replay them deterministically —
+fast, hermetic, byte-stable, no subprocess in CI:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, JobRunner, ProcessRunnerExt};
+use processkit::testing::RecordReplayRunner;
+
+// Record once against the real tool (an opt-in `--record` test run, say):
+let runner = RecordReplayRunner::record("fixtures/git.json", JobRunner::new());
+let version = runner.run(&amp;Command::new("git").arg("--version")).await?;
+runner.save()?;                                  // the error-surfacing flush
+                                                 // (best-effort on drop too)
+
+// Replay everywhere else:
+let runner = RecordReplayRunner::replay("fixtures/git.json")?;
+assert_eq!(runner.run(&amp;Command::new("git").arg("--version")).await?, version);
+<span class="boring">}</span></code></pre></pre>
+<p>Semantics worth knowing before you commit a cassette:</p>
+<div class="table-wrapper"><table><thead><tr><th>Aspect</th><th>Behavior</th></tr></thead><tbody>
+<tr><td>Match key</td><td>program + args + cwd + a stdin <strong>source digest</strong> (hashed, never persisted: in-memory bytes hash their content, a <code>from_file</code> source hashes its path) — no stdin (absent or <code>Stdin::empty()</code>) keys distinctly; lossy UTF-8 on the text parts</td></tr>
+<tr><td>Environment</td><td><strong>values never reach the file</strong> — only sorted variable names, so <em>env</em> secrets can't leak through a committed fixture; env is <em>not</em> matched, so env differences can't cause spurious misses</td></tr>
+<tr><td>Duplicates of one key</td><td>replay in capture order, then the <strong>last entry repeats</strong> — a recorded sequence (<code>git rev-parse HEAD</code> before/after a commit) replays faithfully, while retry/probe loops keep getting a stable final answer</td></tr>
+<tr><td>Miss</td><td>strict <code>Error::CassetteMiss</code> (distinct from a missing program — <code>is_not_found()</code> is <code>false</code>) — replay never spawns a surprise subprocess; a stale cassette fails loudly</td></tr>
+<tr><td>Timeouts</td><td>a recorded timed-out run replays as one, surfacing <code>Error::Timeout</code> with the <em>replaying</em> command's deadline</td></tr>
+<tr><td>Format</td><td>pretty-printed JSON with a <code>version</code> field; unknown versions / corrupt files / an entry with a contradictory outcome / a file over 64 MiB are <code>Error::Io(InvalidData)</code>, a missing file keeps <code>NotFound</code></td></tr>
+<tr><td>Err results</td><td>not recorded — only completed runs (non-zero exits and captured timeouts <em>are</em> results and are recorded)</td></tr>
+</tbody></table>
+</div>
+<p>Only env <strong>values</strong> are redacted. <code>program</code>, <code>args</code>, <code>cwd</code>, <code>stdout</code>, and
+<code>stderr</code> are stored <strong>verbatim</strong> and can carry secrets (a <code>--password=…</code> flag, a
+token echoed to output), so review a fixture before committing it. On Unix the
+file is written <code>0600</code> and the write <strong>refuses to follow a symlink</strong> at the
+cassette path (<code>O_NOFOLLOW</code>, so a planted link can't redirect the secret-bearing
+write — it fails loud instead). On Windows the file inherits the containing
+directory's ACL, so restrict that directory (or use a per-user temp dir, not a
+world-writable shared one) for secret-bearing fixtures.</p>
+<p>A neat trick: in tests, record against a <code>ScriptedRunner</code> instead of
+<code>JobRunner</code> — the whole record→save→replay round trip is then itself
+hermetic.</p>
+<h2 id="wrapping-a-cli-tool"><a class="header" href="#wrapping-a-cli-tool">Wrapping a CLI tool</a></h2>
+<p><code>CliClient</code> is the foundation for typed wrappers around external tools
+(<code>git</code>, <code>jj</code>, <code>gh</code>, <code>kubectl</code>, …): it owns the program name, per-client
+defaults, and the runner; your wrapper contributes only commands and parsers.
+The <code>cli_client!</code> macro generates the boilerplate:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{cli_client, Error, ProcessRunner, Result};
+use std::path::Path;
+use std::time::Duration;
+
+cli_client!(
+    /// A typed `git` client.
+    pub struct Git =&gt; "git"
+);
+
+impl&lt;R: ProcessRunner&gt; Git&lt;R&gt; {
+    /// HEAD's commit id.
+    pub async fn head(&amp;self, repo: &amp;Path) -&gt; Result&lt;String&gt; {
+        self.core.run(self.core.command_in(repo, ["rev-parse", "HEAD"])).await
+    }
+
+    /// Is the work tree clean? (exit code IS the answer)
+    pub async fn is_clean(&amp;self, repo: &amp;Path) -&gt; Result&lt;bool&gt; {
+        self.core.probe(self.core.command_in(repo, ["diff", "--quiet"])).await
+    }
+
+    /// Branch list, parsed — the parser is fallible and returns the crate's
+    /// `Result`, typically an `Error::Parse` naming the program.
+    pub async fn branches(&amp;self, repo: &amp;Path) -&gt; Result&lt;Vec&lt;String&gt;&gt; {
+        self.core
+            .try_parse(
+                self.core.command_in(repo, ["branch", "--format=%(refname:short)"]),
+                |out| {
+                    let list: Vec&lt;String&gt; = out.lines().map(str::to_owned).collect();
+                    if list.is_empty() {
+                        Err(Error::Parse {
+                            program: "git".into(),
+                            message: "no branches".into(),
+                        })
+                    } else {
+                        Ok(list)
+                    }
+                },
+            )
+            .await
+    }
+}
+
+// Production: the real runner, with per-client defaults.
+let git = Git::new().default_timeout(Duration::from_secs(30));
+let head = git.head(Path::new(".")).await?;
+<span class="boring">}</span></code></pre></pre>
+<p>The generated type is <code>Git&lt;R: ProcessRunner = JobRunner&gt;</code> with <code>Git::new()</code>,
+<code>Git::with_runner(runner)</code>, <code>default_timeout</code> / <code>default_env</code> /
+<code>default_env_remove</code> builders, and a public <code>core: CliClient&lt;R&gt;</code> whose helpers
+speak the crate-wide verb vocabulary: <code>run</code> (trimmed stdout), <code>output_string</code> (full
+result), <code>run_unit</code> (success only), <code>exit_code</code>, <code>probe</code>, plus <code>parse</code>
+(infallible) and <code>try_parse</code> (fallible → <code>Error::Parse</code>).</p>
+<p>And the payoff — the wrapper tests hermetically with any double:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[tokio::test]
+async fn head_is_trimmed() {
+    let git = Git::with_runner(
+        ScriptedRunner::new().on(["git", "rev-parse", "HEAD"], Reply::ok("abc123\n")),
+    );
+    assert_eq!(git.head(Path::new("/repo")).await.unwrap(), "abc123");
+}
+<span class="boring">}</span></code></pre></pre>
+<p>…or with a <a href="testing.html#recordreplay-cassettes">cassette</a> recorded against the real tool
+once.</p>
+<hr />
+<p>Next: <a href="platform-support.html">Platform support</a> ·
+<a href="supervision.html">Supervision</a> ·
+<a href="commands.html">Running commands</a></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="platform-support"><a class="header" href="#platform-support">Platform support</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p><code>processkit</code> supports <strong>Unix and Windows only</strong> — it requires <code>tokio::process</code>
+and OS job / process-group primitives that have no equivalent on bare targets
+like wasm. Building for such a target fails at compile time (a <code>compile_error!</code>
+guard, or earlier in tokio's own dependencies). Within the supported set, it
+treats platform support as first-class: every capability is either fully
+implemented, <em>honestly partial</em> (documented and typed), or refused with
+<code>Error::Unsupported</code> — never silently skipped. This page collects all the
+matrices and fine print in one place.</p>
+<ul>
+<li><a href="platform-support.html#containment-mechanisms">Containment mechanisms</a></li>
+<li><a href="platform-support.html#capability-matrices">Capability matrices</a></li>
+<li><a href="platform-support.html#caveats">Caveats</a></li>
+</ul>
+<h2 id="containment-mechanisms"><a class="header" href="#containment-mechanisms">Containment mechanisms</a></h2>
+<p><code>ProcessGroup::mechanism()</code> reports which one you actually got:</p>
+<div class="table-wrapper"><table><thead><tr><th><code>Mechanism</code></th><th>Platform</th><th>How containment works</th></tr></thead><tbody>
+<tr><td><code>JobObject</code></td><td>Windows</td><td>A Job Object with kill-on-close; children are created suspended, assigned to the job, then resumed — so even a grandchild forked in the first instant is contained</td></tr>
+<tr><td><code>CgroupV2</code></td><td>Linux (with delegation)</td><td>A private cgroup; children join in <code>pre_exec</code>, before <code>exec</code>, so descendants can never escape; teardown is <code>cgroup.kill</code></td></tr>
+<tr><td><code>ProcessGroup</code></td><td>macOS, BSDs, Linux fallback</td><td>POSIX process groups (<code>setpgid</code>); teardown is <code>killpg</code>; tracked per started/adopted child</td></tr>
+</tbody></table>
+</div>
+<p>On Linux the cgroup backend requires controller <strong>delegation</strong>, and resource
+limits specifically need this process to run at the <strong>real cgroup-v2 root</strong>. The
+crate creates the limit cgroup under this process's own cgroup and enables the
+controllers in that cgroup's <code>subtree_control</code>, which cgroup v2's "no internal
+processes" rule allows only for the real hierarchy root (the one exempt cgroup). A
+cgroup <em>namespace</em> root does <strong>not</strong> qualify — it only virtualizes the view — so an
+ordinary (private-cgroupns) container fails <code>EBUSY</code> just like a systemd
+session/scope/service. The crate does not migrate your process into a sub-cgroup
+to work around it, so in practice limits apply only at a minimal non-systemd init
+sitting at the real root. Without a usable cgroup it quietly falls back to <code>ProcessGroup</code> —
+unless you requested <a href="platform-support.html#capability-matrices">resource limits</a>, which fail fast
+instead (<code>Error::ResourceLimit</code>), because an unapplied cap is no protection.</p>
+<h2 id="capability-matrices"><a class="header" href="#capability-matrices">Capability matrices</a></h2>
+<p><strong>Teardown &amp; containment</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Capability</th><th>Windows JobObject</th><th>Linux cgroup</th><th>Linux pgroup</th><th>macOS/BSD</th></tr></thead><tbody>
+<tr><td>Kill-on-drop, whole tree</td><td>✅</td><td>✅</td><td>✅ groups-based</td><td>✅ groups-based</td></tr>
+<tr><td>Graceful <code>shutdown</code> (TERM → grace → KILL)</td><td>🟡 atomic kill only</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><code>adopt</code> an external child</td><td>✅ (future forks contained)</td><td>✅ (future forks contained)</td><td>🟡 exec'd child tracked individually</td><td>🟡 same</td></tr>
+</tbody></table>
+</div>
+<p><strong>Signals &amp; freezing</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Capability</th><th>Windows</th><th>Linux cgroup</th><th>Linux pgroup</th><th>macOS/BSD</th></tr></thead><tbody>
+<tr><td>Arbitrary signal (<code>Hup</code>, <code>Usr1</code>, <code>Other(n)</code>, …)</td><td>❌ <code>Kill</code> only</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><code>suspend</code> / <code>resume</code></td><td>🟡 per-thread counts</td><td>✅ <code>cgroup.freeze</code></td><td>✅ <code>SIGSTOP</code>/<code>CONT</code></td><td>✅ <code>SIGSTOP</code>/<code>CONT</code></td></tr>
+</tbody></table>
+</div>
+<p>On the cgroup mechanism, a non-<code>Kill</code> <code>signal</code> (and the <code>SIGSTOP</code>/<code>SIGCONT</code>
+fallback used for <code>suspend</code>/<code>resume</code> on pre-5.2 kernels without <code>cgroup.freeze</code>)
+surfaces a real per-member delivery failure (e.g. <code>EPERM</code>) as an <code>Err</code> rather
+than swallowing it — consistent with the "never silently skipped" philosophy; an
+<code>ESRCH</code> race (the member already exited) is still success.</p>
+<p><strong>Inspection &amp; accounting</strong> (<code>stats</code> feature)</p>
+<div class="table-wrapper"><table><thead><tr><th>Capability</th><th>Windows</th><th>Linux cgroup</th><th>Linux pgroup</th><th>macOS/BSD</th></tr></thead><tbody>
+<tr><td><code>members()</code></td><td>✅ whole tree</td><td>✅ whole tree</td><td>🟡 leaders only</td><td>🟡 leaders only</td></tr>
+<tr><td>Group CPU / peak memory</td><td>✅</td><td>✅</td><td>❌ count only</td><td>❌ count only</td></tr>
+<tr><td>Per-run <code>cpu_time</code> / <code>peak_memory_bytes</code> / <code>profile</code></td><td>✅</td><td>✅</td><td>✅ (<code>/proc</code>)</td><td>❌ <code>None</code></td></tr>
+</tbody></table>
+</div>
+<p><strong>Resource limits</strong> (<code>limits</code> feature)</p>
+<div class="table-wrapper"><table><thead><tr><th>Capability</th><th>Windows</th><th>Linux cgroup</th><th>Linux pgroup</th><th>macOS/BSD</th></tr></thead><tbody>
+<tr><td><code>memory_max</code> (whole tree)</td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
+<tr><td><code>max_processes</code></td><td>✅</td><td>✅</td><td>❌</td><td>❌</td></tr>
+<tr><td><code>cpu_quota</code></td><td>🟡 approximate</td><td>✅</td><td>❌</td><td>❌</td></tr>
+</tbody></table>
+</div>
+<p><strong>Spawn-time controls</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Capability</th><th>Windows</th><th>Unix (all)</th></tr></thead><tbody>
+<tr><td><code>inherit_env</code> allow-list</td><td>✅</td><td>✅</td></tr>
+<tr><td><code>uid</code> / <code>gid</code> drop</td><td>❌ <code>Unsupported</code></td><td>✅</td></tr>
+<tr><td><code>setsid</code></td><td>❌ <code>Unsupported</code></td><td>✅</td></tr>
+<tr><td><code>create_no_window</code></td><td>✅</td><td>no-op</td></tr>
+<tr><td><code>kill_on_parent_death</code></td><td>✅ always on (kernel)</td><td>Linux: direct child; macOS/BSD: no-op</td></tr>
+</tbody></table>
+</div>
+<p>Everything not listed — capture, streaming, interactive stdin, encodings,
+buffer policies, timeouts, retry, pipelines, supervision, readiness probes,
+the test doubles, cassettes, cancellation — is <strong>platform-agnostic</strong> and
+behaves identically everywhere.</p>
+<h2 id="caveats"><a class="header" href="#caveats">Caveats</a></h2>
+<p>The honest fine print, mostly consequences of OS semantics:</p>
+<p><strong>Windows: termination is an exit code, never <code>Signalled</code> (D18).</strong> Windows has
+no signal abstraction, so a killed process reports
+<a href="https://docs.rs/processkit/latest/processkit/enum.Outcome.html"><code>Outcome::Exited</code></a>,
+not <code>Outcome::Signalled</code>. <code>TerminateProcess</code> / <code>TerminateJobObject(_, 1)</code> is
+<code>Exited(1)</code> — indistinguishable from a voluntary <code>exit(1)</code> — and <code>Ctrl-C</code>
+surfaces as <code>Exited(-1073741510)</code> (<code>STATUS_CONTROL_C_EXIT</code> as a signed <code>i32</code>).
+The crate reports the platform truth rather than fabricating a <code>Signalled</code> from
+an NTSTATUS code (that mapping would be a lossy guess). When you need to <em>know</em>
+the run was killed, use a <code>ProcessGroup</code> deadline or a cancellation token (which
+surface as <code>TimedOut</code> / <code>Error::Cancelled</code> on every platform). <code>Outcome::Signalled</code>
+is therefore Unix-only.</p>
+<p><strong>Linux cgroup delegation.</strong> Creating the per-group cgroup needs write access
+to the cgroup v2 hierarchy. Dev boxes typically lack it → the pgroup fallback.
+CI inside containers usually has it. Check <code>mechanism()</code> when behavior must
+not silently degrade.</p>
+<p><strong><code>uid()</code>/<code>gid()</code> × the cgroup mechanism.</strong> The OS applies the uid drop
+<em>before</em> <code>pre_exec</code> hooks, and the cgroup join runs in <code>pre_exec</code> — as the
+already-dropped user, who can't write the root-owned <code>cgroup.procs</code>. The spawn
+fails with a permission error (never an uncontained child). Privilege drop
+composes cleanly with the process-group mechanism.</p>
+<p><strong><code>setsid()</code> × process groups.</strong> A new session implies a new process group;
+the crate coordinates the two (the containment tracking follows the new
+session's group), so <code>setsid</code> keeps the kill-on-drop guarantee instead of
+breaking out of it.</p>
+<p><strong><code>kill_on_parent_death()</code> is thread-scoped on Linux.</strong> <code>PR_SET_PDEATHSIG</code>
+fires when the spawning <em>thread</em> dies, not only the process. On a
+multi-threaded tokio runtime a retired worker thread could kill the child
+early; spawn from a current-thread runtime for the strongest guarantee. It
+covers the <strong>direct child only</strong> — with the parent SIGKILLed, nothing tears
+the cgroup/pgroup down, so grandchildren survive. The
+parent-died-before-arming race is closed by re-checking <code>getppid()</code> in the
+child against the spawner's pid captured before the fork — which stays
+correct when the spawner itself is PID 1 (a container entrypoint).</p>
+<p><strong>Windows: the suspended-spawn handshake.</strong> Children are created
+<code>CREATE_SUSPENDED</code>, assigned to the job, then resumed — closing the classic
+race where a fast child forks before it's in the job. A consequence: a raw
+<code>ProcessGroup::spawn</code> caller passing its own creation flags gets them OR'd
+with <code>CREATE_SUSPENDED</code> (the <code>Command</code>-driven paths handle this for you, incl.
+<code>create_no_window</code>).</p>
+<p><strong>Windows: nested suspends.</strong> <code>SuspendThread</code> keeps per-thread <em>counts</em> — two
+<code>suspend()</code> calls need two <code>resume()</code>s. The POSIX backends are level-triggered
+(idempotent). Suspension is also best-effort against a tree that is spawning
+threads mid-walk.</p>
+<p><strong>Spawning into a suspended cgroup group.</strong> The freeze is group <em>state</em>: a
+child spawned or adopted while suspended joins frozen — the forked child
+joins the cgroup <em>before</em> <code>exec</code>, so it can freeze before completing the
+spawn handshake and <strong><code>start()</code> may never return until resume</strong>. Resume
+before starting new work; details in
+<a href="process-groups.html#suspending-and-resuming">Process groups</a>.</p>
+<p><strong>Frozen trees and graceful shutdown.</strong> Hard kills penetrate a frozen tree
+(SIGKILL / <code>cgroup.kill</code> / job terminate), but a graceful <code>shutdown</code> leads
+with a <code>SIGTERM</code> the frozen processes can't handle — it waits out the full
+grace. Resume first.</p>
+<p><strong>pgroup backends: leaders, zombies, pid reuse.</strong> <code>members()</code> lists tracked
+group leaders only; an exited-but-unreaped child (zombie) still probes as
+alive (keep <code>wait()</code>ing handles if you need prompt liveness, e.g. for
+<code>shutdown</code>'s early return); and pid-based signalling is inherently
+best-effort against pid reuse — the crate prunes dead entries on every probe
+to keep the window minimal.</p>
+<hr />
+<p>Next: <a href="process-groups.html">Process groups</a> ·
+<a href="commands.html">Running commands</a> ·
+<a href="README.html">‹ docs index</a></p>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="upgrading-processkit"><a class="header" href="#upgrading-processkit">Upgrading processkit</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p>Per-version notes for <strong>consumers</strong> moving their dependency forward: what breaks,
+who it affects, and the exact change to make. The <a href="https://github.com/ZelAnton/ProcessKit-rs/blob/main/CHANGELOG.md">CHANGELOG</a> is
+the full record; this page is the "I depend on it, what do I do" view.</p>
+<blockquote>
+<p><strong>Versioning.</strong> From 1.0.0 onward <code>processkit</code> follows
+<a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>: the public API is
+stable, and any breaking change lands only in a new <strong>major</strong> version, so <code>1.x</code>
+upgrades are backward-compatible. The default Cargo requirement <code>processkit = "1"</code>
+already does the right thing — it allows <code>1.*</code> but not <code>2.0</code>. Skim the relevant
+section here before each major bump. (The <code>mock</code> feature's <code>mockall</code>-generated
+<code>expect_*</code> surface stays semver-exempt — it tracks the <code>mockall</code> version.)</p>
+</blockquote>
+<h2 id="100-from-011x"><a class="header" href="#100-from-011x">1.0.0 (from 0.11.x)</a></h2>
+<p>A few breaking changes, all <strong>caught by the compiler</strong> — if it builds after the
+bump, you're done.</p>
+<h3 id="outputlinetext-is-now-an-accessor"><a class="header" href="#outputlinetext-is-now-an-accessor"><code>OutputLine.text</code> is now an accessor</a></h3>
+<p><code>OutputLine</code> (the per-line payload of <code>RunningProcess::output_events</code>) no longer
+exposes <code>text</code> as a public field — read it via <code>line.text() -&gt; &amp;str</code> (or
+<code>line.into_text() -&gt; String</code> to take ownership). This frees the line
+representation to evolve. Fix: <code>line.text</code> → <code>line.text()</code>.</p>
+<h3 id="errorresourcelimit-is-now-a-struct-variant"><a class="header" href="#errorresourcelimit-is-now-a-struct-variant"><code>Error::ResourceLimit</code> is now a struct variant</a></h3>
+<p><code>Error::ResourceLimit(String)</code> became <code>Error::ResourceLimit { message: String }</code>
+(parity with the other rich variants, room for structured detail later). Fix a
+match <code>Error::ResourceLimit(m)</code> → <code>Error::ResourceLimit { message: m }</code>.
+(Only relevant with the <code>limits</code> feature.)</p>
+<h3 id="the-text-capture-verb-is-renamed-output--output_string"><a class="header" href="#the-text-capture-verb-is-renamed-output--output_string">The text-capture verb is renamed <code>output</code> → <code>output_string</code></a></h3>
+<p>The verb that runs to completion and returns the full <code>ProcessResult&lt;String&gt;</code>
+is now spelled <strong><code>output_string</code></strong> on every layer, matching <code>output_bytes</code> (and
+the spelling <code>Command</code>/<code>Pipeline</code>/<code>RunningProcess</code> already used). Two reasons:
+the same operation no longer has two names depending on the type, and a bare
+<code>output</code> clashed with <code>std::process::Command::output</code>, which returns <strong>bytes</strong> —
+the explicit name removes that footgun.</p>
+<p><strong>Affected if you call</strong> <code>ProcessRunner::output</code>, <code>CliClient::output</code>, the free
+fn <code>processkit::output</code>, or implement a custom <code>ProcessRunner</code> / use <code>MockRunner</code>.
+The symptom is a build error like <em>"no method named <code>output</code>"</em> /
+<em>"cannot find function <code>output</code> in crate <code>processkit</code>"</em>.</p>
+<p><strong>Fix</strong> — rename the calls (mechanical):</p>
+<div class="table-wrapper"><table><thead><tr><th>Before</th><th>After</th></tr></thead><tbody>
+<tr><td><code>runner.output(&amp;cmd)</code> / <code>client.output(args)</code></td><td><code>runner.output_string(&amp;cmd)</code> / <code>client.output_string(args)</code></td></tr>
+<tr><td><code>processkit::output(prog, args)</code></td><td><code>processkit::output_string(prog, args)</code></td></tr>
+<tr><td><code>impl ProcessRunner { async fn output(..) }</code></td><td><code>async fn output_string(..)</code> (the required method)</td></tr>
+<tr><td><code>mock.expect_output()</code></td><td><code>mock.expect_output_string()</code></td></tr>
+</tbody></table>
+</div>
+<p><code>output_bytes</code> is unchanged, and <code>Command</code>/<code>Pipeline</code>/<code>RunningProcess</code> callers
+need no change (those already used <code>output_string</code>).</p>
+<h2 id="0110-from-010x"><a class="header" href="#0110-from-010x">0.11.0 (from 0.10.x)</a></h2>
+<p>Two breaking changes, both small and <strong>caught by the compiler</strong> — if it builds
+after the bump, you're done. Plus one internal fix that needs no action.</p>
+<h3 id="1-stats-is-now-opt-in--a-cargotoml-change"><a class="header" href="#1-stats-is-now-opt-in--a-cargotoml-change">1. <code>stats</code> is now opt-in — a <code>Cargo.toml</code> change</a></h3>
+<p>The default feature set is now just <code>process-control</code>; <code>stats</code> is no longer on by
+default. (It is the one feature carrying an extra build dependency — the Windows
+<code>ProcessStatus</code> FFI used solely for the peak-memory readout — and it gates a
+specialized metrics surface the core never needs.)</p>
+<p><strong>Affected if you use any metrics API:</strong> <code>ProcessGroup::stats</code> /
+<code>ProcessGroupStats</code>, <code>RunningProcess::cpu_time</code> / <code>peak_memory_bytes</code>, or
+<code>RunProfile</code> / <code>RunningProcess::profile</code>. The symptom is a build error like
+<em>"no method named <code>stats</code> / <code>cpu_time</code> / <code>peak_memory_bytes</code> / <code>profile</code>"</em> or
+<em>"cannot find type <code>ProcessGroupStats</code> / <code>RunProfile</code>"</em>.</p>
+<p><strong>Fix</strong> — add the feature:</p>
+<pre><code class="language-toml">[dependencies]
+processkit = { version = "0.11", features = ["stats"] }
+</code></pre>
+<p>If you already enable <code>limits</code>, do <strong>nothing</strong> — <code>limits</code> still implies <code>stats</code>.</p>
+<p><strong>If you don't use metrics:</strong> nothing to do. Your default build is now slightly
+leaner (no Windows <code>ProcessStatus</code> dependency).</p>
+<h3 id="2-outputevent-carries-outputline--a-code-change"><a class="header" href="#2-outputevent-carries-outputline--a-code-change">2. <code>OutputEvent</code> carries <code>OutputLine</code> — a code change</a></h3>
+<p>Affects only callers of <code>RunningProcess::output_events</code> (the ordered
+lifecycle+output event stream). The per-line payload changed from a bare <code>String</code>
+to a <code>#[non_exhaustive]</code> <code>OutputLine</code> struct with a public <code>text</code> field.</p>
+<p>Before:</p>
+<pre><code class="language-rust ignore">use processkit::OutputEvent;
+
+while let Some(ev) = events.next().await {
+    match ev {
+        OutputEvent::Stdout(s) =&gt; println!("out: {s}"),
+        OutputEvent::Stderr(s) =&gt; eprintln!("err: {s}"),
+        _ =&gt; {}
+    }
+}</code></pre>
+<p>After — read <code>line.text</code> (in 1.0 this becomes <code>line.text()</code>; see the
+<a href="upgrading.html#100-from-011x">1.0.0 section</a> above):</p>
+<pre><code class="language-rust ignore">match ev {
+    OutputEvent::Stdout(line) =&gt; println!("out: {}", line.text),
+    OutputEvent::Stderr(line) =&gt; eprintln!("err: {}", line.text),
+    _ =&gt; {}
+}</code></pre>
+<p>Or, when you don't care which stream produced the line, use the new accessor:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>if let Some(text) = ev.text() {
+    println!("{text}");
+}
+<span class="boring">}</span></code></pre></pre>
+<p><code>OutputLine</code> is <code>#[non_exhaustive]</code>: you receive it from the crate and read its
+fields — you don't construct it, and a <code>match</code> on it should use <code>..</code>. The change
+exists to reserve room for per-line metadata (e.g. a timestamp or a monotonic line
+index) in a later release without another break.</p>
+<h3 id="3-cancel-precedence-fix-issue-7--no-action"><a class="header" href="#3-cancel-precedence-fix-issue-7--no-action">3. Cancel-precedence fix ("Issue 7") — no action</a></h3>
+<p>A run that reaps on its own is no longer at risk of being misreported as
+<code>Err(Cancelled)</code> by a cancellation token that fires in the narrow window between
+the reap and the disposition check. This is an internal correctness fix with no
+public-API change. If you carried a workaround that tolerated a spurious
+<code>Cancelled</code> on a self-completing run, you can remove it.</p>
+<h3 id="verify-the-upgrade"><a class="header" href="#verify-the-upgrade">Verify the upgrade</a></h3>
+<pre><code class="language-sh">cargo update -p processkit
+cargo build      # both breaking changes are compiler-caught
+cargo test
+</code></pre>
+<h2 id="upgrading-from-older-than-010"><a class="header" href="#upgrading-from-older-than-010">Upgrading from older than 0.10</a></h2>
+<p>The jumps below 0.10 predate this guide. Read the dated sections of the
+<a href="https://github.com/ZelAnton/ProcessKit-rs/blob/main/CHANGELOG.md">CHANGELOG</a> for each minor you cross — every breaking entry there
+is marked <strong>Breaking</strong> and carries its own migration note. Notable recent
+non-breaking additions you gain along the way: <code>Command::checked</code> / <code>run_unit</code>
+(0.10.2) and the <code>record</code>-cassette symlink/<code>Display</code>-injection hardening (0.10.2).</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+    </div>
+    </body>
+</html>

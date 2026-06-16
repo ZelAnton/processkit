@@ -1,0 +1,467 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Timeouts, retries &amp; cancellation - ProcessKit</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="Async child-process management — Rust · Go · F# · Kotlin">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><a href="index.html">Overview</a></li><li class="chapter-item expanded affix "><li class="spacer"></li><li class="chapter-item expanded affix "><li class="part-title">Rust</li><li class="chapter-item expanded "><a href="cookbook.html"><strong aria-hidden="true">1.</strong> Cookbook</a></li><li class="chapter-item expanded "><a href="commands.html"><strong aria-hidden="true">2.</strong> Running commands</a></li><li class="chapter-item expanded "><a href="process-groups.html"><strong aria-hidden="true">3.</strong> Process groups</a></li><li class="chapter-item expanded "><a href="streaming.html"><strong aria-hidden="true">4.</strong> Streaming & interactive I/O</a></li><li class="chapter-item expanded "><a href="pipelines.html"><strong aria-hidden="true">5.</strong> Pipelines</a></li><li class="chapter-item expanded "><a href="timeouts-and-cancellation.html" class="active"><strong aria-hidden="true">6.</strong> Timeouts, retries & cancellation</a></li><li class="chapter-item expanded "><a href="supervision.html"><strong aria-hidden="true">7.</strong> Supervision</a></li><li class="chapter-item expanded "><a href="testing.html"><strong aria-hidden="true">8.</strong> Testing your code</a></li><li class="chapter-item expanded "><a href="platform-support.html"><strong aria-hidden="true">9.</strong> Platform support</a></li><li class="chapter-item expanded "><a href="upgrading.html"><strong aria-hidden="true">10.</strong> Upgrading</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">ProcessKit</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://github.com/ZelAnton/ProcessKit" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+                        <a href="https://github.com/ZelAnton/ProcessKit/edit/main/docs/docs/timeouts-and-cancellation.md" title="Suggest an edit" aria-label="Suggest an edit">
+                            <i id="git-edit-button" class="fa fa-edit"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="timeouts-retries--cancellation"><a class="header" href="#timeouts-retries--cancellation">Timeouts, retries &amp; cancellation</a></h1>
+<p><a href="README.html">‹ docs index</a></p>
+<p>Three ways a run ends early, with three different philosophies:</p>
+<ul>
+<li>
+<p>a <strong>timeout</strong> is <em>data</em> — the deadline was part of the run's contract, so
+its expiry is captured in the result (and only the success-checking verbs
+turn it into an error);</p>
+</li>
+<li>
+<p>a <strong>retry</strong> is a <em>policy</em> — the success-checking verbs replay the run while
+your classifier says the failure is transient;</p>
+</li>
+<li>
+<p>a <strong>cancellation</strong> is an <em>abandonment</em> — the caller
+changed its mind, so every path reports an error; there is no result worth
+inspecting.</p>
+</li>
+<li>
+<p><a href="#timeouts">Timeouts</a></p>
+</li>
+<li>
+<p><a href="#retries">Retries</a></p>
+</li>
+<li>
+<p><a href="#cancellation">Cancellation</a></p>
+</li>
+<li>
+<p><a href="#precedence-and-interactions">Precedence and interactions</a></p>
+</li>
+</ul>
+<h2 id="timeouts"><a class="header" href="#timeouts">Timeouts</a></h2>
+<p><code>Command::timeout(d)</code> kills the <strong>whole process tree</strong> at the deadline — not
+just the direct child, so a wrapper script's grandchildren die too.</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+use std::time::Duration;
+
+// Captured: inspect the flag yourself.
+let result = Command::new("slow-tool")
+    .timeout(Duration::from_secs(5))
+    .output_string()
+    .await?;
+if result.timed_out() {
+    println!("partial output before the kill: {}", result.stdout());
+}
+
+// Raised: the checking verbs convert the flag into a typed error.
+let err = Command::new("slow-tool")
+    .timeout(Duration::from_secs(5))
+    .run()
+    .await
+    .unwrap_err();
+assert!(matches!(err, processkit::Error::Timeout { .. }));
+<span class="boring">}</span></code></pre></pre>
+<p>Where each verb lands:</p>
+<div class="table-wrapper"><table><thead><tr><th>Verb</th><th>Deadline expiry becomes</th></tr></thead><tbody>
+<tr><td><code>output_string()</code> / <code>output_bytes()</code></td><td><code>Ok</code> result with <code>timed_out() == true</code>, <code>code() == None</code>, partial output kept</td></tr>
+<tr><td><code>run()</code> / <code>exit_code()</code> / <code>probe()</code> / <code>checked()</code></td><td><code>Error::Timeout { program, timeout, stdout, stderr }</code> — the partial output captured before the kill is attached (<code>err.diagnostic()</code> surfaces a hung tool's last words)</td></tr>
+<tr><td><code>first_line(pred)</code></td><td><code>Error::Timeout</code> (the line never arrived in time)</td></tr>
+<tr><td><code>start()</code> + streaming</td><td>the stream <strong>ends</strong> at the deadline (tree killed, pipes closed); <code>finish</code> then reports the kill (<code>outcome == Outcome::TimedOut</code>)</td></tr>
+<tr><td><code>ensure_success()</code> on a captured result</td><td><code>Error::Timeout</code>, checked <em>before</em> the exit code</td></tr>
+<tr><td><a href="pipelines.html#timeouts"><code>Pipeline</code></a></td><td>chain deadline → <code>timed_out</code> result; per-stage deadlines fold into pipefail</td></tr>
+</tbody></table>
+</div>
+<p>Two distinct deadline families to keep apart:</p>
+<ul>
+<li><code>Command::timeout</code> — the run's own contract, this section.</li>
+<li>The <a href="streaming.html#readiness-probes">readiness probes</a>' <code>within</code> parameter —
+gives <code>Error::NotReady</code> and <strong>never kills the child</strong>.</li>
+</ul>
+<h3 id="graceful-timeout"><a class="header" href="#graceful-timeout">Graceful timeout</a></h3>
+<p>By default the deadline <strong>hard-kills</strong> at once. Add <code>timeout_grace(d)</code> to give the
+tree a chance to clean up: at the deadline it is sent <code>SIGTERM</code> (or the signal chosen
+with <code>timeout_signal</code>, which needs the <code>process-control</code> feature), allowed up to the
+grace window to exit, then <code>SIGKILL</code>ed — the same SIGTERM → wait → SIGKILL tier as
+<a href="process-groups.html"><code>ProcessGroup::shutdown</code></a>. A signal-handling child that exits ends
+the grace early.</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::Command;
+use std::time::Duration;
+
+let result = Command::new("slow-tool")
+    .timeout(Duration::from_secs(30))
+    .timeout_grace(Duration::from_secs(5)) // SIGTERM, wait up to 5s, then SIGKILL
+    .output_string()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p><code>timed_out()</code> is <code>true</code> regardless of whether the child exited on the signal or was
+<code>SIGKILL</code>ed after the grace — the deadline is what fired. <strong>Windows</strong> has no signal
+tier: <code>timeout_grace</code> is accepted but the deadline kills the job atomically.</p>
+<p>The explicit <code>RunningProcess::shutdown(grace)</code> verb (stop a started handle on demand)
+composes with a <code>Command::timeout</code>: its own SIGTERM → grace → SIGKILL is the
+<strong>single</strong> teardown (it does not also fire the run's timeout teardown), and if the
+deadline has <strong>already elapsed</strong> when you call <code>shutdown</code>, the outcome is reported as
+<code>Outcome::TimedOut</code> — the <code>grace</code> you pass governs the teardown timing.</p>
+<h2 id="retries"><a class="header" href="#retries">Retries</a></h2>
+<p><code>retry(max_attempts, backoff, classifier)</code> replays a failed run — up to
+<code>max_attempts</code> <strong>total</strong> attempts, sleeping <code>backoff</code> between tries, retrying
+only while the classifier accepts the error:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, Error};
+use std::time::Duration;
+
+let out = Command::new("curl")
+    .args(["-fsS", "https://example.com/api"])
+    .timeout(Duration::from_secs(10))
+    .retry(3, Duration::from_millis(250), |e| {
+        // transient: network timeouts and curl's "couldn't connect" (7)
+        matches!(e, Error::Timeout { .. })
+            || matches!(e, Error::Exit { code: 7, .. })
+    })
+    .run()
+    .await?;
+<span class="boring">}</span></code></pre></pre>
+<p>Ground rules:</p>
+<ul>
+<li>Retries apply to the <strong>success-checking</strong> paths only (<code>run</code>, <code>exit_code</code>,
+<code>probe</code>, <code>ProcessRunnerExt::checked</code> — and everything built on them, e.g.
+<code>CliClient</code>). The non-erroring <code>output_string</code> capture never retries: it
+didn't fail.</li>
+<li>The classifier sees the typed error — match on variants, codes, even the
+captured stderr.</li>
+<li>Each attempt re-runs the <em>same</em> <code>Command</code>: a one-shot stdin source
+(<a href="commands.html#standard-input">table</a>) is consumed by attempt #1, so attempt #2
+<strong>fails loud</strong> with an <code>Error::Io</code> (<code>InvalidInput</code>) at launch rather than
+silently feeding empty stdin. Use reusable sources for retried commands.</li>
+<li>A <code>Cancelled</code> error is <strong>never retried</strong>, classifier or not — the token
+stays cancelled forever, so another attempt could only fail the same way.</li>
+</ul>
+<p>For "keep it alive" (restart a <em>service</em> whenever it exits) rather than
+"replay this one operation", use a <a href="supervision.html"><code>Supervisor</code></a> — same
+backoff shape, different loop condition.</p>
+<h2 id="cancellation"><a class="header" href="#cancellation">Cancellation</a></h2>
+<p>Hand any command a <code>CancellationToken</code> (re-exported at the crate root);
+cancelling the token kills the run's tree and makes every consuming path
+report <code>Error::Cancelled</code>:</p>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::{CancellationToken, Command};
+
+#[tokio::main]
+async fn main() -&gt; processkit::Result&lt;()&gt; {
+    let shutdown = CancellationToken::new();
+
+    // Wire the same parent token into many jobs via child tokens:
+    let job = tokio::spawn({
+        let token = shutdown.child_token();
+        async move {
+            Command::new("long-export").cancel_on(token).run().await
+        }
+    });
+
+    // Ctrl-C handler, sibling failure, UI button, …
+    shutdown.cancel();
+
+    assert!(matches!(
+        job.await.unwrap(),
+        Err(processkit::Error::Cancelled { .. })
+    ));
+    Ok(())
+}</code></pre></pre>
+<p>The contract, path by path:</p>
+<div class="table-wrapper"><table><thead><tr><th>Situation</th><th>Behavior</th></tr></thead><tbody>
+<tr><td>Cancel during <code>run</code> / <code>output_string</code> / <code>output_bytes</code> / <code>wait</code> / <code>profile</code> / <code>exit_code</code> / <code>probe</code></td><td>tree killed, <code>Error::Cancelled { program }</code></td></tr>
+<tr><td>Cancel during streaming (<code>stdout_lines</code>)</td><td>the stream <strong>ends</strong>; the following <code>finish</code> reports <code>Error::Cancelled</code></td></tr>
+<tr><td>Token already cancelled before the run</td><td>short-circuits <strong>before spawning</strong> — no process is ever created</td></tr>
+<tr><td>Cancel on a shared-<code>ProcessGroup</code> handle</td><td>kills the child itself, leaves the group's siblings alone (same scope as a timeout)</td></tr>
+<tr><td>A <code>Pipeline</code> stage's token cancels</td><td>that stage dies; the cancellation errors the whole pipeline and the private group reaps the other stages</td></tr>
+<tr><td>Under <code>retry</code></td><td>terminal — never retried, whatever the classifier says</td></tr>
+<tr><td>Under a <a href="supervision.html"><code>Supervisor</code></a></td><td>terminal — supervision returns <code>Err(Cancelled)</code> instead of restarting into a still-cancelled token</td></tr>
+<tr><td><code>wait_any</code> mid-run</td><td>the raw primitive doesn't synthesize the error — the race just resolves (a <em>pre-cancelled</em> token still hits the pre-spawn short-circuit)</td></tr>
+<tr><td><code>first_line</code> mid-run</td><td>surfaces <code>Error::Cancelled</code> once the token fires — a cancelled stream that closes without a match is reported as cancellation, not <code>Ok(None)</code></td></tr>
+</tbody></table>
+</div>
+<h3 id="client-level-default"><a class="header" href="#client-level-default">Client-level default</a></h3>
+<p>A typed wrapper built on <a href="testing.html#wrapping-a-cli-tool"><code>CliClient</code></a> usually constructs
+and consumes its <code>Command</code>s internally — there is no place to chain a
+per-call <code>cancel_on</code>. Set the token <strong>once on the client</strong>; every command it
+builds carries it:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{CancellationToken, CliClient};
+
+let token = CancellationToken::new();
+let gh = CliClient::new("gh").default_cancel_on(token.child_token());
+// ... controller cancels `token` → every in-flight command of THIS client
+// dies (whole tree), surfacing Error::Cancelled to the awaiting call.
+<span class="boring">}</span></code></pre></pre>
+<p>Clients are cheap — scope cancellation by building <strong>one client per
+cancellable scope</strong> with its own (child) token, instead of threading tokens
+through call signatures. <code>cli_client!</code>-generated wrappers re-emit the builder,
+so <code>Git::new().default_cancel_on(t)</code> works for downstream crates too.</p>
+<p><strong>Precedence:</strong> a per-command <code>cancel_on</code> chained on a built command
+<em>replaces</em> the client default (explicit beats default, like a per-command
+<code>timeout</code> after <code>default_timeout</code>). To honor <strong>both</strong> sources, wire it
+explicitly — <code>CancellationToken</code> has no built-in merge: derive a child of the
+default (<code>let c = default.child_token()</code>), hand the command
+<code>cancel_on(c.clone())</code>, and have the second source call <code>c.cancel()</code>. Or
+simpler: build a dedicated client per scope.</p>
+<h2 id="precedence-and-interactions"><a class="header" href="#precedence-and-interactions">Precedence and interactions</a></h2>
+<p><strong>Timeout vs. cancellation.</strong> A timeout is <em>captured</em>; a cancellation is
+<em>always an error</em>. When both land on the same run, <strong>cancellation wins</strong> —
+you asked the run to stop mattering, so no result is synthesized:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{CancellationToken, Command};
+use std::time::Duration;
+
+let token = CancellationToken::new();
+token.cancel();
+
+let err = Command::new("tool")
+    .timeout(Duration::from_millis(1))   // would have been a Timeout…
+    .cancel_on(token)                    // …but cancellation takes priority
+    .run()
+    .await
+    .unwrap_err();
+assert!(matches!(err, processkit::Error::Cancelled { .. }));
+<span class="boring">}</span></code></pre></pre>
+<p><strong>Which knob for which job:</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>You want</th><th>Reach for</th></tr></thead><tbody>
+<tr><td>"This run may not take longer than X"</td><td><code>Command::timeout</code></td></tr>
+<tr><td>"This operation is flaky, try a few times"</td><td><code>Command::retry</code></td></tr>
+<tr><td>"Stop everything when the app shuts down"</td><td><code>cancel_on</code> + one shared token</td></tr>
+<tr><td>"Keep this service alive across crashes"</td><td><a href="supervision.html"><code>Supervisor</code></a></td></tr>
+<tr><td>"Tell me when it's <em>ready</em>, don't kill it"</td><td><a href="streaming.html#readiness-probes">readiness probes</a></td></tr>
+</tbody></table>
+</div>
+<hr />
+<p>Next: <a href="supervision.html">Supervision</a> ·
+<a href="streaming.html">Streaming &amp; interactive I/O</a> ·
+<a href="commands.html">Running commands</a></p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="pipelines.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="supervision.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="pipelines.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="supervision.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
