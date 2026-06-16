@@ -279,6 +279,18 @@ configuration.</p>
 <tr><td><code>tracing</code></td><td>—</td><td>Lifecycle events via the <code>tracing</code> crate (never logs argv/env values)</td></tr>
 </tbody></table>
 </div>
+<h2 id="how-it-compares"><a class="header" href="#how-it-compares">How it compares</a></h2>
+<div class="table-wrapper"><table><thead><tr><th></th><th style="text-align: center">whole-tree kill-on-drop</th><th style="text-align: center">async</th><th style="text-align: center">limits / stats</th><th style="text-align: center">streaming · pipelines · supervision</th></tr></thead><tbody>
+<tr><td><code>std::process</code></td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
+<tr><td><code>tokio::process</code></td><td style="text-align: center">—</td><td style="text-align: center">✓</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
+<tr><td><a href="https://crates.io/crates/command-group"><code>command-group</code></a></td><td style="text-align: center">✓</td><td style="text-align: center">✓</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
+<tr><td><a href="https://crates.io/crates/async-process"><code>async-process</code></a></td><td style="text-align: center">—</td><td style="text-align: center">✓ (smol)</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
+<tr><td><a href="https://crates.io/crates/duct"><code>duct</code></a></td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">pipelines only</td></tr>
+<tr><td><strong>processkit</strong></td><td style="text-align: center">✓</td><td style="text-align: center">✓ (tokio)</td><td style="text-align: center">✓</td><td style="text-align: center">✓</td></tr>
+</tbody></table>
+</div>
+<p>The first column is the differentiator: descendants are contained and reaped as
+a unit, not just the direct child.</p>
 <h2 id="consuming-verbs"><a class="header" href="#consuming-verbs">Consuming verbs</a></h2>
 <p>Every run begins with the same <code>Command</code> builder; the verb you end with
 determines what you receive:</p>
@@ -471,18 +483,6 @@ impl&lt;R: ProcessRunner&gt; Git&lt;R&gt; {
 // In production: Git::new().head(Path::new(".")).await
 // In tests:      Git::with_runner(ScriptedRunner::new().on([…], Reply::ok("abc\n")))
 <span class="boring">}</span></code></pre></pre>
-<h2 id="how-it-compares"><a class="header" href="#how-it-compares">How it compares</a></h2>
-<div class="table-wrapper"><table><thead><tr><th></th><th style="text-align: center">whole-tree kill-on-drop</th><th style="text-align: center">async</th><th style="text-align: center">limits / stats</th><th style="text-align: center">streaming · pipelines · supervision</th></tr></thead><tbody>
-<tr><td><code>std::process</code></td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
-<tr><td><code>tokio::process</code></td><td style="text-align: center">—</td><td style="text-align: center">✓</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
-<tr><td><a href="https://crates.io/crates/command-group"><code>command-group</code></a></td><td style="text-align: center">✓</td><td style="text-align: center">✓</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
-<tr><td><a href="https://crates.io/crates/async-process"><code>async-process</code></a></td><td style="text-align: center">—</td><td style="text-align: center">✓ (smol)</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
-<tr><td><a href="https://crates.io/crates/duct"><code>duct</code></a></td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">pipelines only</td></tr>
-<tr><td><strong>processkit</strong></td><td style="text-align: center">✓</td><td style="text-align: center">✓ (tokio)</td><td style="text-align: center">✓</td><td style="text-align: center">✓</td></tr>
-</tbody></table>
-</div>
-<p>The first column is the differentiator: descendants are contained and reaped as
-a unit, not just the direct child.</p>
 <h2 id="guides"><a class="header" href="#guides">Guides</a></h2>
 <p>The <a href="cookbook.html">Cookbook</a> maps "I want to do X" directly to a working snippet —
 the fastest way in. The individual guides go deeper on each topic:</p>
