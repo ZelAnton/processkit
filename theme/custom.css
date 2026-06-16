@@ -9,8 +9,14 @@
 /* ── Sidebar navigation ─────────────────────────────────────────────────── */
 
 /* No horizontal overflow */
+.sidebar,
 .sidebar-scrollbox {
     overflow-x: hidden;
+}
+
+.sidebar .chapter {
+    font-size: 1.8rem;
+    font-weight: bold;
 }
 
 /* Left-border track on every item */
