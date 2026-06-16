@@ -99,6 +99,20 @@ The key design choice: a non-zero exit is captured data until you explicitly ask
 for success. Timeouts are captured in the result. Only cancellation is always
 an error — because an abandoned run has no result worth inspecting.
 
+## Feature flags
+
+Each flag is additive. The kill-on-drop guarantee is unconditional in every
+configuration.
+
+| Feature | Default | Adds |
+|---|---|---|
+| `process-control` | ✅ | Signals, suspend/resume, `members()`, `adopt()` |
+| `stats` | — | Resource measurement: CPU time, peak memory, `sample_stats`, `profile` |
+| `limits` | — | Whole-tree resource caps (implies `stats`) |
+| `record` | — | Record/replay cassettes (adds `serde`) |
+| `mock` | — | `mockall`-generated `MockRunner` (semver-exempt surface) |
+| `tracing` | — | Lifecycle events via the `tracing` crate (never logs argv/env values) |
+
 ## Consuming verbs
 
 Every run begins with the same `Command` builder; the verb you end with
@@ -367,20 +381,6 @@ the fastest way in. The individual guides go deeper on each topic:
 | [Upgrading](upgrading.md) | Per-version migration notes |
 
 API reference: [docs.rs/processkit](https://docs.rs/processkit).
-
-## Feature flags
-
-Each flag is additive. The kill-on-drop guarantee is unconditional in every
-configuration.
-
-| Feature | Default | Adds |
-|---|---|---|
-| `process-control` | ✅ | Signals, suspend/resume, `members()`, `adopt()` |
-| `stats` | — | Resource measurement: CPU time, peak memory, `sample_stats`, `profile` |
-| `limits` | — | Whole-tree resource caps (implies `stats`) |
-| `record` | — | Record/replay cassettes (adds `serde`) |
-| `mock` | — | `mockall`-generated `MockRunner` (semver-exempt surface) |
-| `tracing` | — | Lifecycle events via the `tracing` crate (never logs argv/env values) |
 
 ## What's next
 
