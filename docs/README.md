@@ -116,6 +116,20 @@ configuration.
 | `mock` | — | `mockall`-generated `MockRunner` (semver-exempt surface) |
 | `tracing` | — | Lifecycle events via the `tracing` crate (never logs argv/env values) |
 
+## How it compares
+
+| | whole-tree kill-on-drop | async | limits / stats | streaming · pipelines · supervision |
+|---|:---:|:---:|:---:|:---:|
+| `std::process` | — | — | — | — |
+| `tokio::process` | — | ✓ | — | — |
+| [`command-group`](https://crates.io/crates/command-group) | ✓ | ✓ | — | — |
+| [`async-process`](https://crates.io/crates/async-process) | — | ✓ (smol) | — | — |
+| [`duct`](https://crates.io/crates/duct) | — | — | — | pipelines only |
+| **processkit** | ✓ | ✓ (tokio) | ✓ | ✓ |
+
+The first column is the differentiator: descendants are contained and reaped as
+a unit, not just the direct child.
+
 ## Consuming verbs
 
 Every run begins with the same `Command` builder; the verb you end with
@@ -350,20 +364,6 @@ impl<R: ProcessRunner> Git<R> {
 // In production: Git::new().head(Path::new(".")).await
 // In tests:      Git::with_runner(ScriptedRunner::new().on([…], Reply::ok("abc\n")))
 ```
-
-## How it compares
-
-| | whole-tree kill-on-drop | async | limits / stats | streaming · pipelines · supervision |
-|---|:---:|:---:|:---:|:---:|
-| `std::process` | — | — | — | — |
-| `tokio::process` | — | ✓ | — | — |
-| [`command-group`](https://crates.io/crates/command-group) | ✓ | ✓ | — | — |
-| [`async-process`](https://crates.io/crates/async-process) | — | ✓ (smol) | — | — |
-| [`duct`](https://crates.io/crates/duct) | — | — | — | pipelines only |
-| **processkit** | ✓ | ✓ (tokio) | ✓ | ✓ |
-
-The first column is the differentiator: descendants are contained and reaped as
-a unit, not just the direct child.
 
 ## Guides
 
