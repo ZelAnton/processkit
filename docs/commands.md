@@ -108,7 +108,7 @@ against the child's output) and the pipe is dropped afterwards to signal EOF.
 The two *one-shot* sources are consumed by their first run: a retried or
 cloned command reusing them **fails loud** the second time — re-running a
 consumed `from_reader`/`from_lines` source is an `Error::Io` (`InvalidInput`)
-at launch (D10), not a silent empty stdin. Prefer the reusable sources when
+at launch, not a silent empty stdin. Prefer the reusable sources when
 a command may run more than once.
 
 For conversational, request/response stdin — write a line, read the answer,
@@ -184,7 +184,7 @@ memory, not wall-time, so pair it with `timeout` against a flooding child.
 
 Even under a *drop* policy (`DropOldest`/`DropNewest`), the checking verbs that
 hand back stdout as if complete — `run`, `parse`, `try_parse` — **refuse**
-silently-truncated output (B12): if the policy dropped lines they fail with
+silently-truncated output: if the policy dropped lines they fail with
 `Error::OutputTooLarge` rather than feed a parser a truncated tail. The lenient
 capture verbs (`output_string` / `output_bytes`) are unaffected — they return
 the partial result with `truncated()` set for you to inspect.
@@ -396,10 +396,10 @@ The error enum is structured and `#[non_exhaustive]`:
 | `Error::Unsupported { operation }` | The platform can't do what was asked (and silently skipping would be wrong) |
 | `Error::Cancelled { program }` | the run's token was cancelled |
 | `Error::ResourceLimit { message }` | (`limits` feature) a requested cap couldn't be enforced |
-| `Error::Io(source)` | A low-level IO error from the crate's own machinery (driving a child, group control, cassette files) — never an arbitrary foreign `io::Error` (no blanket `From`, D13) |
+| `Error::Io(source)` | A low-level IO error from the crate's own machinery (driving a child, group control, cassette files) — never an arbitrary foreign `io::Error` (no blanket `From`) |
 
 `Error::diagnostic()` returns the most useful human-facing line out of a
-failure that captured output — `Exit`, and (D12) `Timeout` / `Signalled` (the
+failure that captured output — `Exit`, `Timeout`, and `Signalled` (the
 partial streams of a hung-then-killed or crashed tool). Each of those variants'
 one-line `Display` also appends a bounded excerpt of that diagnostic (the last
 non-empty line, capped at 200 bytes), so a bare `eprintln!("{e}")` reads

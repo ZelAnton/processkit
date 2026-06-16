@@ -2,6 +2,10 @@
 
 ![ProcessKit](processkit-cover.png)
 
+ProcessKit is an async child-process management library for Rust (tokio). It solves
+the orphan-process problem at the kernel level and packages a full set of tools
+around it: streaming I/O, shell-free pipelines, supervision, and hermetic testing seams.
+
 Running external programs is part of everyday software: compiling code, querying
 version control, invoking CLI tools, managing background servers. Every major
 runtime makes it easy to start a child process. What they don't make easy is
@@ -46,8 +50,8 @@ rather than assume it.
 processkit = "1"
 ```
 
-A [tokio](https://tokio.rs/) runtime is required. Minimum supported Rust
-version: 1.88.
+A [tokio](https://tokio.rs/) runtime is required. Requires Rust 1.88 or later (MSRV).
+The crate is stable at 1.0; breaking changes land only in a new major version.
 
 The simplest case — run a command, get its trimmed stdout, fail on error:
 
@@ -97,6 +101,7 @@ determines what you receive:
 | just the exit code | `exit_code()` | `i32`; a timed-out run errors instead of returning `-1` |
 | a yes/no answer | `probe()` | `bool` — `0` → true, `1` → false, anything else errors |
 | a typed value from stdout | `parse(\|s\| …)` | `T`, success required |
+| typed value, non-zero ok | `try_parse(\|s\| …)` | `Option<T>` — `None` on non-zero |
 | first matching output line | `first_line(\|l\| …)` | `Option<String>` |
 | a live handle for streaming | `start()` | `RunningProcess` |
 
@@ -325,9 +330,9 @@ impl<R: ProcessRunner> Git<R> {
 |---|:---:|:---:|:---:|:---:|
 | `std::process` | — | — | — | — |
 | `tokio::process` | — | ✓ | — | — |
-| `command-group` | ✓ | ✓ | — | — |
-| `async-process` | — | ✓ (smol) | — | — |
-| `duct` | — | — | — | pipelines only |
+| [`command-group`](https://crates.io/crates/command-group) | ✓ | ✓ | — | — |
+| [`async-process`](https://crates.io/crates/async-process) | — | ✓ (smol) | — | — |
+| [`duct`](https://crates.io/crates/duct) | — | — | — | pipelines only |
 | **processkit** | ✓ | ✓ (tokio) | ✓ | ✓ |
 
 The first column is the differentiator: descendants are contained and reaped as
@@ -372,10 +377,9 @@ configuration.
 ProcessKit is a Rust library today, published as
 [processkit](https://crates.io/crates/processkit) on crates.io. The plan is
 to bring the same approach — kernel-backed whole-tree containment, honest
-error semantics, and testable seams — to other ecosystems: a **Go** package,
-an **F#** library, a **Kotlin** library, and a **Python** wrapper. Each
-implementation will follow the same philosophy and be documented here as it
-ships.
+error semantics, and testable seams — to other ecosystems: a Go package,
+an F# library, a Kotlin library, and a Python wrapper. Each implementation
+will follow the same philosophy and be documented here as it ships.
 
 ---
 

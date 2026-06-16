@@ -117,7 +117,7 @@ score = score × 0.5^(Δt / failure_decay) + 1
   collective pause** of `storm_pause` (jittered into `[0.5, 1.5)` like the
   backoff), resets the score, and resumes.
 
-Only failures feed the score — crashes and spawn errors, not clean exits
+Only failures feed the score — crashes and spawn errors — not clean exits
 restarted under `RestartPolicy::Always`. The pause stacks with (runs before)
 the per-restart backoff, and the `max_restarts` budget is checked first, so a
 storm pause never extends an exhausted budget. Pauses taken are reported in

@@ -123,8 +123,6 @@ stays `true`. Windows has no signal tier — the deadline kills atomically.
 
 *Fine print: [Timeouts → graceful timeout](timeouts-and-cancellation.md#graceful-timeout).*
 
-*Fine print: [Timeouts, retries & cancellation](timeouts-and-cancellation.md).*
-
 ## Show a useful error message
 
 ```rust,no_run
@@ -467,7 +465,7 @@ cassette once and replays them hermetically in CI.
 ## Test streaming code — without processes
 
 ```rust,no_run
-use processkit::{Command, Outcome, ProcessRunner, Finished};
+use processkit::{Command, Outcome, Finished};
 use processkit::testing::{Reply, ScriptedRunner};
 use std::time::Duration;
 
@@ -499,7 +497,7 @@ cli_client!(pub struct Git => "git");
 
 impl<R: ProcessRunner> Git<R> {
     pub async fn current_branch(&self) -> Result<String> {
-        // A verb takes the args directly (D7); pass a built `command(..)` only
+        // A verb takes the args directly; pass a built `command(..)` only
         // when you need to customize it (per-call timeout, stdin, …).
         self.core.run(["branch", "--show-current"]).await
     }
@@ -514,4 +512,4 @@ The generated struct carries a runner and per-client defaults
 parsers — and because the runner is injectable, the whole wrapper is testable
 with the previous recipe's `ScriptedRunner`.
 
-*Fine print: [Testing your code → CliClient](testing.md).*
+*Fine print: [Testing your code → CliClient](testing.md#wrapping-a-cli-tool).*

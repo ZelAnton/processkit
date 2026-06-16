@@ -156,3 +156,7 @@ The jumps below 0.10 predate this guide. Read the dated sections of the
 is marked **Breaking** and carries its own migration note. Notable recent
 non-breaking additions you gain along the way: `Command::checked` / `run_unit`
 (0.10.2) and the `record`-cassette symlink/`Display`-injection hardening (0.10.2).
+
+---
+
+[‹ docs index](README.md)
