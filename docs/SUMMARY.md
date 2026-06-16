@@ -14,9 +14,3 @@
 - [Testing your code](testing.md)
 - [Platform support](platform-support.md)
 - [Upgrading](upgrading.md)
-
----
-
-- [crates.io ↗](https://crates.io/crates/processkit)
-- [docs.rs ↗](https://docs.rs/processkit)
-- [GitHub ↗](https://github.com/ZelAnton/ProcessKit-rs)
