@@ -57,7 +57,7 @@ which honors the command's `ok_codes`): an exit code outside the accepted set
 `ok_codes([0, 2])` that exits `2` is a success, so `OnCrash` treats it as clean,
 not a crash.
 
-| `RestartPolicy` | Restarts after… |
+| RestartPolicy | Restarts after… |
 |---|---|
 | `OnCrash` *(default)* | crashes only; a clean exit ends supervision (`PolicySatisfied`) |
 | `Always` | every completed run, clean or not — pair it with `stop_when`/`max_restarts` or it loops forever |

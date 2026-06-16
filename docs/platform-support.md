@@ -19,7 +19,7 @@ matrices and fine print in one place.
 
 `ProcessGroup::mechanism()` reports which one you actually got:
 
-| `Mechanism` | Platform | How containment works |
+| Mechanism | Platform | How containment works |
 |---|---|---|
 | `JobObject` | Windows | A Job Object with kill-on-close; children are created suspended, assigned to the job, then resumed — so even a grandchild forked in the first instant is contained |
 | `CgroupV2` | Linux (with delegation) | A private cgroup; children join in `pre_exec`, before `exec`, so descendants can never escape; teardown is `cgroup.kill` |
