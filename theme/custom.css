@@ -54,6 +54,16 @@
     list-style: none;
 }
 
+/* ── Wide tables ────────────────────────────────────────────────────────── */
+
+/* Tables that are wider than the content area scroll instead of clipping */
+.content table {
+    display: block;
+    overflow-x: auto;
+    width: max-content;
+    max-width: 100%;
+}
+
 /* Pinned title ("Overview") above the divider */
 .sidebar .chapter li:not(.chapter-item):not(.spacer) > a {
     font-size: 0.88em;
