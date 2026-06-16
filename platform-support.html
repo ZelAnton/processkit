@@ -208,7 +208,7 @@ matrices and fine print in one place.</p>
 </ul>
 <h2 id="containment-mechanisms"><a class="header" href="#containment-mechanisms">Containment mechanisms</a></h2>
 <p><code>ProcessGroup::mechanism()</code> reports which one you actually got:</p>
-<div class="table-wrapper"><table><thead><tr><th><code>Mechanism</code></th><th>Platform</th><th>How containment works</th></tr></thead><tbody>
+<div class="table-wrapper"><table><thead><tr><th>Mechanism</th><th>Platform</th><th>How containment works</th></tr></thead><tbody>
 <tr><td><code>JobObject</code></td><td>Windows</td><td>A Job Object with kill-on-close; children are created suspended, assigned to the job, then resumed — so even a grandchild forked in the first instant is contained</td></tr>
 <tr><td><code>CgroupV2</code></td><td>Linux (with delegation)</td><td>A private cgroup; children join in <code>pre_exec</code>, before <code>exec</code>, so descendants can never escape; teardown is <code>cgroup.kill</code></td></tr>
 <tr><td><code>ProcessGroup</code></td><td>macOS, BSDs, Linux fallback</td><td>POSIX process groups (<code>setpgid</code>); teardown is <code>killpg</code>; tracked per started/adopted child</td></tr>

@@ -2293,7 +2293,7 @@ which honors the command's <code>ok_codes</code>): an exit code outside the acce
 (default <code>{0}</code>), a timeout, a signal-kill, or a spawn failure. A command with
 <code>ok_codes([0, 2])</code> that exits <code>2</code> is a success, so <code>OnCrash</code> treats it as clean,
 not a crash.</p>
-<div class="table-wrapper"><table><thead><tr><th><code>RestartPolicy</code></th><th>Restarts after…</th></tr></thead><tbody>
+<div class="table-wrapper"><table><thead><tr><th>RestartPolicy</th><th>Restarts after…</th></tr></thead><tbody>
 <tr><td><code>OnCrash</code> <em>(default)</em></td><td>crashes only; a clean exit ends supervision (<code>PolicySatisfied</code>)</td></tr>
 <tr><td><code>Always</code></td><td>every completed run, clean or not — pair it with <code>stop_when</code>/<code>max_restarts</code> or it loops forever</td></tr>
 <tr><td><code>Never</code></td><td>nothing: one run, reported as-is</td></tr>
@@ -2751,7 +2751,7 @@ matrices and fine print in one place.</p>
 </ul>
 <h2 id="containment-mechanisms"><a class="header" href="#containment-mechanisms">Containment mechanisms</a></h2>
 <p><code>ProcessGroup::mechanism()</code> reports which one you actually got:</p>
-<div class="table-wrapper"><table><thead><tr><th><code>Mechanism</code></th><th>Platform</th><th>How containment works</th></tr></thead><tbody>
+<div class="table-wrapper"><table><thead><tr><th>Mechanism</th><th>Platform</th><th>How containment works</th></tr></thead><tbody>
 <tr><td><code>JobObject</code></td><td>Windows</td><td>A Job Object with kill-on-close; children are created suspended, assigned to the job, then resumed — so even a grandchild forked in the first instant is contained</td></tr>
 <tr><td><code>CgroupV2</code></td><td>Linux (with delegation)</td><td>A private cgroup; children join in <code>pre_exec</code>, before <code>exec</code>, so descendants can never escape; teardown is <code>cgroup.kill</code></td></tr>
 <tr><td><code>ProcessGroup</code></td><td>macOS, BSDs, Linux fallback</td><td>POSIX process groups (<code>setpgid</code>); teardown is <code>killpg</code>; tracked per started/adopted child</td></tr>
