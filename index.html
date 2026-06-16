@@ -266,6 +266,18 @@ if result.timed_out() {
 <p>The key design choice: a non-zero exit is captured data until you explicitly ask
 for success. Timeouts are captured in the result. Only cancellation is always
 an error — because an abandoned run has no result worth inspecting.</p>
+<h2 id="feature-flags"><a class="header" href="#feature-flags">Feature flags</a></h2>
+<p>Each flag is additive. The kill-on-drop guarantee is unconditional in every
+configuration.</p>
+<div class="table-wrapper"><table><thead><tr><th>Feature</th><th>Default</th><th>Adds</th></tr></thead><tbody>
+<tr><td><code>process-control</code></td><td>✅</td><td>Signals, suspend/resume, <code>members()</code>, <code>adopt()</code></td></tr>
+<tr><td><code>stats</code></td><td>—</td><td>Resource measurement: CPU time, peak memory, <code>sample_stats</code>, <code>profile</code></td></tr>
+<tr><td><code>limits</code></td><td>—</td><td>Whole-tree resource caps (implies <code>stats</code>)</td></tr>
+<tr><td><code>record</code></td><td>—</td><td>Record/replay cassettes (adds <code>serde</code>)</td></tr>
+<tr><td><code>mock</code></td><td>—</td><td><code>mockall</code>-generated <code>MockRunner</code> (semver-exempt surface)</td></tr>
+<tr><td><code>tracing</code></td><td>—</td><td>Lifecycle events via the <code>tracing</code> crate (never logs argv/env values)</td></tr>
+</tbody></table>
+</div>
 <h2 id="consuming-verbs"><a class="header" href="#consuming-verbs">Consuming verbs</a></h2>
 <p>Every run begins with the same <code>Command</code> builder; the verb you end with
 determines what you receive:</p>
@@ -487,18 +499,6 @@ the fastest way in. The individual guides go deeper on each topic:</p>
 </tbody></table>
 </div>
 <p>API reference: <a href="https://docs.rs/processkit">docs.rs/processkit</a>.</p>
-<h2 id="feature-flags"><a class="header" href="#feature-flags">Feature flags</a></h2>
-<p>Each flag is additive. The kill-on-drop guarantee is unconditional in every
-configuration.</p>
-<div class="table-wrapper"><table><thead><tr><th>Feature</th><th>Default</th><th>Adds</th></tr></thead><tbody>
-<tr><td><code>process-control</code></td><td>✅</td><td>Signals, suspend/resume, <code>members()</code>, <code>adopt()</code></td></tr>
-<tr><td><code>stats</code></td><td>—</td><td>Resource measurement: CPU time, peak memory, <code>sample_stats</code>, <code>profile</code></td></tr>
-<tr><td><code>limits</code></td><td>—</td><td>Whole-tree resource caps (implies <code>stats</code>)</td></tr>
-<tr><td><code>record</code></td><td>—</td><td>Record/replay cassettes (adds <code>serde</code>)</td></tr>
-<tr><td><code>mock</code></td><td>—</td><td><code>mockall</code>-generated <code>MockRunner</code> (semver-exempt surface)</td></tr>
-<tr><td><code>tracing</code></td><td>—</td><td>Lifecycle events via the <code>tracing</code> crate (never logs argv/env values)</td></tr>
-</tbody></table>
-</div>
 <h2 id="whats-next"><a class="header" href="#whats-next">What's next</a></h2>
 <p>ProcessKit is a Rust library today, published as
 <a href="https://crates.io/crates/processkit">processkit</a> on crates.io. The plan is
