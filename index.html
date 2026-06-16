@@ -7,7 +7,18 @@
 
 
         <!-- Custom HTML head -->
-        
+        <meta property="og:title" content="ProcessKit — async child-process management for Rust" />
+        <meta property="og:description" content="Kernel-backed whole-tree kill-on-drop for tokio. Job Object on Windows, cgroup v2 on Linux, POSIX process group on macOS. Streaming, pipelines, supervision, hermetic testing." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://zelanton.github.io/ProcessKit/" />
+        <meta property="og:image" content="https://zelanton.github.io/ProcessKit/processkit-cover-social.jpg" />
+        <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:site_name" content="ProcessKit" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="ProcessKit — async child-process management for Rust" />
+        <meta name="twitter:description" content="Kernel-backed whole-tree kill-on-drop for tokio. No orphan processes, ever." />
+        <meta name="twitter:image" content="https://zelanton.github.io/ProcessKit/processkit-cover-social.jpg" />
+
         <meta name="description" content="Async child-process management — Rust · Go · F# · Kotlin">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
@@ -179,94 +190,317 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="processkit--documentation"><a class="header" href="#processkit--documentation">processkit — documentation</a></h1>
-<p><code>processkit</code> is a child-process toolkit for Rust in two layers:</p>
-<pre><code class="language-text">┌─────────────────────────────────────────────────────────────────┐
-│  Runner layer (async, tokio)                                    │
-│  Command · RunningProcess · Pipeline · Supervisor · CliClient   │
-│  capture / streaming / interactive stdin / readiness probes     │
-│  testing seam: ProcessRunner → ScriptedRunner / RecordReplay…   │
-├─────────────────────────────────────────────────────────────────┤
-│  Group layer (kill-on-drop containment)                         │
-│  ProcessGroup: spawn / adopt / signal / suspend / members /     │
-│  stats / limits / shutdown                                      │
-├─────────────────────────────────────────────────────────────────┤
-│  OS mechanisms                                                  │
-│  Windows Job Object · Linux cgroup v2 · POSIX process group     │
-└─────────────────────────────────────────────────────────────────┘
-</code></pre>
-<p>Every <code>Command</code> run gets containment for free: the one-shot helpers spawn into
-a fresh private group that dies with the run, so a panicking caller never
-leaks a process tree. The layers are also usable independently — a raw
-<code>ProcessGroup</code> can contain children you spawn yourself, and the runner's
-test doubles never touch the OS at all.</p>
-<h2 id="guides"><a class="header" href="#guides">Guides</a></h2>
-<p><strong>New to the crate?</strong> Start with the <a href="cookbook.html">Cookbook</a> — short
-task-to-snippet recipes for everything the crate does — then read
-<a href="commands.html">Running commands</a> end to end (it's the vocabulary every other
-guide builds on). Reach for the rest as the need arises, and keep
-<a href="platform-support.html">Platform support</a> handy before you ship: it collects
-every per-OS caveat in one place.</p>
-<div class="table-wrapper"><table><thead><tr><th>Guide</th><th>Covers</th></tr></thead><tbody>
-<tr><td><a href="cookbook.html">Cookbook</a></td><td>"I want to …" → working snippet, for every capability; each recipe links to its deep guide</td></tr>
-<tr><td><a href="commands.html">Running commands</a></td><td>The <code>Command</code> builder end to end: args, env, stdin sources, encodings, buffer policies, line handlers, timeouts, retry, privileges — and every consuming verb (<code>run</code>, <code>output_string</code>, <code>probe</code>, …) with its error semantics</td></tr>
-<tr><td><a href="process-groups.html">Process groups</a></td><td>Kill-on-drop containment: creating groups, spawning/adopting, teardown verbs, whole-tree signals, suspend/resume, member listing, resource limits, stats sampling</td></tr>
-<tr><td><a href="streaming.html">Streaming &amp; interactive I/O</a></td><td><code>start()</code> and the live <code>RunningProcess</code>: line streaming, interactive stdin, readiness probes (<code>wait_for_line</code> / <code>wait_for_port</code> / <code>wait_for</code>), racing children with <code>wait_any</code>, per-run profiling</td></tr>
-<tr><td><a href="pipelines.html">Pipelines</a></td><td><code>a | b | c</code> without a shell (the <code>|</code> operator works too): wiring, pipefail attribution, <code>unchecked_in_pipe()</code> stages for the <code>| head</code> pattern, timeouts, stdin/stdout at the ends, re-running chains</td></tr>
-<tr><td><a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a></td><td>How a deadline is <em>captured</em> vs when it errors, retry policies and their classifier, and cancellation: per-command tokens and the client-level <code>default_cancel_on</code></td></tr>
-<tr><td><a href="supervision.html">Supervision</a></td><td>Keeping a child alive: restart policies, backoff &amp; jitter math, the failure-storm guard, stop conditions, outcomes, supervising inside a shared group</td></tr>
-<tr><td><a href="testing.html">Testing your code</a></td><td>The <code>ProcessRunner</code> seam — bulk <strong>and</strong> streaming: <code>ScriptedRunner</code> (incl. scripted <code>start()</code> with canned, paced lines), <code>RecordingRunner</code>, <code>MockRunner</code>, record/replay cassettes, and building hermetically-testable CLI wrappers with <code>CliClient</code></td></tr>
-<tr><td><a href="platform-support.html">Platform support</a></td><td>The containment mechanisms, every per-feature support matrix in one place, and the platform caveats worth knowing before you ship</td></tr>
-<tr><td><a href="upgrading.html">Upgrading</a></td><td>Per-version consumer upgrade notes — what changed on each release and the exact change to make across a major bump</td></tr>
-</tbody></table>
-</div>
-<h2 id="feature-flags"><a class="header" href="#feature-flags">Feature flags</a></h2>
-<p>Every flag is <strong>additive</strong> and only gates <em>visibility</em> — the kill-on-drop tree
-guarantee is unconditional in every configuration.</p>
-<div class="table-wrapper"><table><thead><tr><th>Feature</th><th>Default</th><th>Adds</th><th>Extra dependency</th></tr></thead><tbody>
-<tr><td><code>stats</code></td><td>off</td><td><code>ProcessGroup::stats</code> / <code>sample_stats</code>, <code>RunningProcess::cpu_time</code> / <code>peak_memory_bytes</code> / <code>profile</code></td><td><code>windows-sys/ProcessStatus</code> (Windows)</td></tr>
-<tr><td><code>process-control</code></td><td><strong>on</strong></td><td><code>Signal</code>, <code>ProcessGroup::{signal, suspend, resume, members, adopt}</code></td><td>—</td></tr>
-<tr><td><code>limits</code></td><td>off</td><td>Whole-tree resource caps on <code>ProcessGroupOptions</code> (<code>memory_max</code> / <code>max_processes</code> / <code>cpu_quota</code>), <code>Error::ResourceLimit</code>; implies <code>stats</code></td><td>—</td></tr>
-<tr><td><code>mock</code></td><td>off</td><td>A <code>mockall</code>-generated <code>MockRunner</code> for expectation-style tests (test-only; its <code>expect_*</code> surface is <strong>semver-exempt</strong>, tracking <code>mockall</code> — prefer <code>ScriptedRunner</code>/<code>RecordingRunner</code> for a stable double)</td><td><code>mockall</code></td></tr>
-<tr><td><code>tracing</code></td><td>off</td><td>Events on the <code>processkit</code> target: spawn/exit, timeout &amp; cancel firing, group teardown, retries, supervisor storms, teardown anomalies (never argv/env)</td><td><code>tracing</code></td></tr>
-<tr><td><code>record</code></td><td>off</td><td><code>RecordReplayRunner</code> JSON cassettes over the runner seam</td><td><code>serde</code>, <code>serde_json</code></td></tr>
-</tbody></table>
-</div>
+                        <h1 id="processkit"><a class="header" href="#processkit">ProcessKit</a></h1>
+<p><img src="processkit-cover.png" alt="ProcessKit" /></p>
+<p>Running external programs is part of everyday software: compiling code, querying
+version control, invoking CLI tools, managing background servers. Every major
+runtime makes it easy to start a child process. What they don't make easy is
+cleaning up after one.</p>
+<h2 id="the-orphan-problem"><a class="header" href="#the-orphan-problem">The orphan problem</a></h2>
+<p>When a build tool spawns compiler workers, when an integration test starts a
+local database, when a wrapper script calls the real binary — those grandchildren
+exist outside your program's awareness. If your code panics, times out, or drops
+a future mid-flight, the direct child may receive a signal. But everything deeper
+in the tree keeps running as orphans: ports stay bound, temp files stay open,
+CPU keeps spinning. The next test run tries to bind the same port and fails with
+"address already in use."</p>
+<p>This is not an edge case. It is the default behavior of every process-spawning
+API that works at the level of a single pid — including <code>std::process</code> and
+<code>tokio::process</code>.</p>
+<h2 id="whole-tree-containment"><a class="header" href="#whole-tree-containment">Whole-tree containment</a></h2>
+<p>ProcessKit solves this at the kernel level. Every process you start lives inside
+an operating-system containment object: a <strong>Job Object</strong> on Windows, a
+<strong>cgroup v2</strong> on Linux (with a POSIX process-group fallback on hosts without
+cgroup delegation), or a <strong>POSIX process group</strong> on macOS and BSDs.</p>
+<p>When the Rust value that owns the container is dropped — by normal flow, by an
+error propagating through <code>?</code>, or by a panic — the kernel kills every member of
+the tree. Grandchildren included. This is not a best-effort signal sent to a list
+of pids. It is one atomic kernel operation. A child cannot escape the container
+by forking quickly; a signal cannot be missed because a descendant already changed
+its session.</p>
+<p>The library reports the mechanism it actually got — <code>mechanism()</code> returns
+<code>JobObject</code>, <code>CgroupV2</code>, or <code>ProcessGroup</code> — so you can verify the guarantee
+rather than assume it.</p>
+<h2 id="getting-started"><a class="header" href="#getting-started">Getting started</a></h2>
 <pre><code class="language-toml">[dependencies]
-processkit = { version = "…", features = ["limits"] }
+processkit = "1"
 </code></pre>
-<h2 id="the-60-second-tour"><a class="header" href="#the-60-second-tour">The 60-second tour</a></h2>
-<pre><pre class="playground"><code class="language-rust no_run">use processkit::{Command, ProcessGroup, Stdin};
+<p>A <a href="https://tokio.rs/">tokio</a> runtime is required. Minimum supported Rust
+version: 1.88.</p>
+<p>The simplest case — run a command, get its trimmed stdout, fail on error:</p>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::Command;
 
 #[tokio::main]
 async fn main() -&gt; processkit::Result&lt;()&gt; {
-    // One-shot: capture everything. A non-zero exit is data, not an Err.
-    let head = Command::new("git").args(["rev-parse", "HEAD"]).output_string().await?;
-    println!("HEAD = {}", head.stdout().trim());
-
-    // Success-checking: non-zero exit / timeout / signal-kill become typed errors.
-    let version = Command::new("cargo").arg("--version").run().await?;
-
-    // Stdin, timeout, streaming, pipelines, supervision … see the guides.
-    let sorted = Command::new("sort")
-        .stdin(Stdin::from_string("b\na\n"))
-        .timeout(std::time::Duration::from_secs(5))
+    let branch = Command::new("git")
+        .args(["branch", "--show-current"])
         .run()
         .await?;
-
-    // Containment: anything spawned through a group dies with it.
-    let group = ProcessGroup::new()?;
-    let _server = group.start(&amp;Command::new("dev-server")).await?;
-    drop(group); // the server — and everything *it* spawned — is reaped
-
-    let _ = (version, sorted);
+    println!("on branch: {branch}");
     Ok(())
 }</code></pre></pre>
-<h2 id="api-reference"><a class="header" href="#api-reference">API reference</a></h2>
-<p>The rustdoc on <a href="https://docs.rs/processkit">docs.rs</a> is the authoritative
-per-item reference; these guides are the narrative layer on top — they explain
-how the pieces compose, with the platform fine print collected in
-<a href="platform-support.html">Platform support</a>.</p>
+<p>When you need more than "success or error" — the exit code, both streams,
+whether the run timed out — <code>output_string()</code> returns the full result without
+raising on a non-zero exit:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">use processkit::Command;
+</span><span class="boring">#[tokio::main] async fn main() -&gt; processkit::Result&lt;()&gt; {
+</span>let result = Command::new("cargo").arg("test").output_string().await?;
+if result.timed_out() {
+    eprintln!("tests hung; partial output:\n{}", result.stdout());
+} else if !result.is_success() {
+    eprintln!("exit {}: {}", result.code().unwrap(), result.stderr());
+}
+<span class="boring">Ok(()) }</span></code></pre></pre>
+<p>The key design choice: a non-zero exit is captured data until you explicitly ask
+for success. Timeouts are captured in the result. Only cancellation is always
+an error — because an abandoned run has no result worth inspecting.</p>
+<h2 id="consuming-verbs"><a class="header" href="#consuming-verbs">Consuming verbs</a></h2>
+<p>Every run begins with the same <code>Command</code> builder; the verb you end with
+determines what you receive:</p>
+<div class="table-wrapper"><table><thead><tr><th>What you want</th><th>Verb</th><th>What you get</th></tr></thead><tbody>
+<tr><td>stdout, success required</td><td><code>run()</code></td><td>trimmed <code>String</code>; non-zero / timeout / kill → typed error</td></tr>
+<tr><td>full outcome, exit as data</td><td><code>output_string()</code></td><td><code>ProcessResult</code> — code, stdout, stderr, <code>timed_out</code></td></tr>
+<tr><td>just the exit code</td><td><code>exit_code()</code></td><td><code>i32</code>; a timed-out run errors instead of returning <code>-1</code></td></tr>
+<tr><td>a yes/no answer</td><td><code>probe()</code></td><td><code>bool</code> — <code>0</code> → true, <code>1</code> → false, anything else errors</td></tr>
+<tr><td>a typed value from stdout</td><td><code>parse(|s| …)</code></td><td><code>T</code>, success required</td></tr>
+<tr><td>first matching output line</td><td><code>first_line(|l| …)</code></td><td><code>Option&lt;String&gt;</code></td></tr>
+<tr><td>a live handle for streaming</td><td><code>start()</code></td><td><code>RunningProcess</code></td></tr>
+</tbody></table>
+</div>
+<p>The same vocabulary is available on every layer: <code>ProcessRunner</code>,
+<code>ProcessGroup</code>, <code>CliClient</code>.</p>
+<h2 id="streaming-and-interactive-io"><a class="header" href="#streaming-and-interactive-io">Streaming and interactive I/O</a></h2>
+<p>For commands that produce large or incremental output, <code>start()</code> returns a live
+handle you drive yourself. Stream stdout line by line as the child produces it,
+with no buffering and no waiting for exit:</p>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::{Command, StreamExt, Finished, Outcome};
+
+#[tokio::main]
+async fn main() -&gt; processkit::Result&lt;()&gt; {
+    let mut run = Command::new("cargo")
+        .args(["build", "--release"])
+        .start()
+        .await?;
+
+    let mut lines = run.stdout_lines()?;
+    while let Some(line) = lines.next().await {
+        println!("{line}");
+    }
+    // Stderr was drained in the background the whole time.
+    let Finished { outcome, stderr, .. } = run.finish().await?;
+    if outcome != Outcome::Exited(0) {
+        eprintln!("build failed:\n{stderr}");
+    }
+    Ok(())
+}</code></pre></pre>
+<p>For conversational tools — send a request, read the response, repeat —
+<code>keep_stdin_open()</code> gives you an async writer you can interleave with reads.
+The library handles the background stderr drain so the child can never block
+on a full pipe while you're busy with stdout.</p>
+<p>Readiness probes solve "start a server, then use it" without guessing at an
+arbitrary sleep:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">use processkit::Command;
+</span><span class="boring">use std::time::Duration;
+</span><span class="boring">#[tokio::main] async fn main() -&gt; processkit::Result&lt;()&gt; {
+</span>let mut run = Command::new("my-server").start().await?;
+
+// Wait for the startup banner on stdout:
+run.wait_for_line(|l| l.contains("listening on"), Duration::from_secs(10))
+    .await?;
+
+// Or wait for a TCP port to accept connections:
+run.wait_for_port("127.0.0.1:8080".parse().unwrap(), Duration::from_secs(10))
+    .await?;
+<span class="boring">Ok(()) }</span></code></pre></pre>
+<p>A probe that cannot pass — the child exited, or the deadline elapsed — fails
+with <code>Error::NotReady</code> and does not kill the child. You decide what to do next.</p>
+<h2 id="shell-free-pipelines"><a class="header" href="#shell-free-pipelines">Shell-free pipelines</a></h2>
+<p><code>a | b | c</code> without a shell string. Stages are connected in-process through a
+relay, so there are no quoting rules, no word-splitting, and no injection
+surface. All stages share one kill-on-drop group.</p>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::Command;
+
+<span class="boring">#[tokio::main] async fn main() -&gt; processkit::Result&lt;()&gt; {
+</span>let authors = (Command::new("git").args(["log", "--format=%an"])
+    | Command::new("sort")
+    | Command::new("uniq").arg("-c"))
+    .run()
+    .await?;
+println!("{authors}");
+<span class="boring">Ok(()) }</span></code></pre></pre>
+<p>The outcome follows pipefail semantics: stdout is always the last stage's
+output, but the exit code, stderr, and program name are attributed to the
+first stage that failed. A stage that legitimately stops reading early — the
+classic <code>producer | head -n1</code> shape — can be marked <code>.unchecked_in_pipe()</code> so
+its broken-pipe exit is not counted as a failure.</p>
+<h2 id="timeouts-retries-and-cancellation"><a class="header" href="#timeouts-retries-and-cancellation">Timeouts, retries, and cancellation</a></h2>
+<p><code>Command::timeout(d)</code> kills the whole process tree at the deadline. For the
+one-shot capture verbs the expiry is part of the result; for the
+success-checking verbs it becomes a typed <code>Error::Timeout</code> that carries the
+partial output captured before the kill — useful for diagnosing what a hung
+tool's last words were.</p>
+<p><code>Command::retry(attempts, backoff, classifier)</code> replays the run on transient
+failure. The classifier sees the typed error — you can match on the exit code,
+an <code>Error::Timeout</code>, or the captured stderr. A cancelled run is never retried:
+the token stays cancelled.</p>
+<p><code>CancellationToken</code> (re-exported from <code>tokio-util</code>) is the coordinated
+shutdown primitive. Wire the same parent token into many jobs via child tokens;
+cancelling the parent kills every process tree and every consuming path reports
+<code>Error::Cancelled</code>.</p>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::{CancellationToken, Command};
+use std::time::Duration;
+
+<span class="boring">#[tokio::main] async fn main() -&gt; processkit::Result&lt;()&gt; {
+</span>let shutdown = CancellationToken::new();
+
+let job = tokio::spawn({
+    let token = shutdown.child_token();
+    async move {
+        Command::new("long-job")
+            .timeout(Duration::from_secs(30))
+            .cancel_on(token)
+            .run()
+            .await
+    }
+});
+
+// Signal from anywhere — Ctrl-C, sibling failure, UI button:
+shutdown.cancel();
+<span class="boring">Ok(()) }</span></code></pre></pre>
+<h2 id="keeping-a-service-alive"><a class="header" href="#keeping-a-service-alive">Keeping a service alive</a></h2>
+<p>Where <code>retry</code> answers "replay this one operation until it succeeds," a
+<code>Supervisor</code> answers "keep this running." It restarts the command on exit per
+policy, with bounded restarts, exponential backoff, and per-default jitter so a
+restarted fleet doesn't pile back in lockstep:</p>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::{Command, RestartPolicy, Supervisor};
+use std::time::Duration;
+
+<span class="boring">#[tokio::main] async fn main() -&gt; processkit::Result&lt;()&gt; {
+</span>let outcome = Supervisor::new(Command::new("my-server").args(["--port", "8080"]))
+    .restart(RestartPolicy::OnCrash)
+    .max_restarts(10)
+    .backoff(Duration::from_millis(200), 2.0)
+    .storm_pause(Duration::from_secs(15))  // crash-loop guard
+    .run()
+    .await?;
+
+println!("ended after {} restarts: {:?}", outcome.restarts, outcome.stopped);
+<span class="boring">Ok(()) }</span></code></pre></pre>
+<p>The optional storm guard distinguishes "fails occasionally" from "crash-looping":
+it maintains a half-life score that grows with each failure and decays between
+them. When the score exceeds a threshold, the supervisor takes one collective
+pause rather than hammering the restart timer at backoff speed.</p>
+<h2 id="resource-limits"><a class="header" href="#resource-limits">Resource limits</a></h2>
+<p>With the <code>limits</code> feature, a <code>ProcessGroup</code> can cap the whole tree's memory,
+process count, and CPU at creation time — enforced by the same kernel object that
+provides kill-on-drop:</p>
+<pre><pre class="playground"><code class="language-rust no_run">use processkit::{Command, ProcessGroup, ProcessGroupOptions};
+
+<span class="boring">#[tokio::main] async fn main() -&gt; processkit::Result&lt;()&gt; {
+</span>let group = ProcessGroup::with_options(
+    ProcessGroupOptions::default()
+        .memory_max(512 * 1024 * 1024)  // 512 MiB across the whole tree
+        .max_processes(64)
+        .cpu_quota(0.5),                 // half of one core
+)?;
+let _job = group.start(&amp;Command::new("untrusted-tool")).await?;
+<span class="boring">Ok(()) }</span></code></pre></pre>
+<p>A limit that cannot be enforced — no cgroup delegation, no Job Object — is a
+hard error at group creation time, not a silently unapplied cap. An unapplied
+cap is no protection.</p>
+<h2 id="testing-code-that-shells-out"><a class="header" href="#testing-code-that-shells-out">Testing code that shells out</a></h2>
+<p>Subprocess behavior is notoriously difficult to test. ProcessKit exposes a
+single trait — <code>ProcessRunner</code> — that decouples "what to run" from "how to
+run it." Production code takes a runner generically; tests inject a double.</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{Command, ProcessRunner, ProcessRunnerExt, Result};
+
+async fn current_branch(runner: &amp;impl ProcessRunner) -&gt; Result&lt;String&gt; {
+    runner.run(&amp;Command::new("git").args(["branch", "--show-current"])).await
+}
+<span class="boring">}</span></code></pre></pre>
+<p>The <code>ScriptedRunner</code> returns canned replies for matched commands. The
+<code>RecordingRunner</code> captures every invocation for assertion. With the <code>record</code>
+feature, <code>RecordReplayRunner</code> records real runs to a JSON cassette and replays
+them in CI — fast, hermetic, byte-stable, no subprocess. The seam covers
+streaming too: a scripted <code>start()</code> feeds canned lines through the same pump
+machinery the real child uses, so <code>stdout_lines</code>, <code>wait_for_line</code>, and <code>finish</code>
+all behave identically in tests.</p>
+<p>The <code>cli_client!</code> macro generates typed wrappers around external tools (<code>git</code>,
+<code>gh</code>, <code>kubectl</code>, …) that are injectable for free:</p>
+<pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use processkit::{cli_client, ProcessRunner, Result};
+use std::path::Path;
+
+cli_client!(pub struct Git =&gt; "git");
+
+impl&lt;R: ProcessRunner&gt; Git&lt;R&gt; {
+    pub async fn head(&amp;self, dir: &amp;Path) -&gt; Result&lt;String&gt; {
+        self.core.run(self.core.command_in(dir, ["rev-parse", "HEAD"])).await
+    }
+}
+
+// In production: Git::new().head(Path::new(".")).await
+// In tests:      Git::with_runner(ScriptedRunner::new().on([…], Reply::ok("abc\n")))
+<span class="boring">}</span></code></pre></pre>
+<h2 id="how-it-compares"><a class="header" href="#how-it-compares">How it compares</a></h2>
+<div class="table-wrapper"><table><thead><tr><th></th><th style="text-align: center">whole-tree kill-on-drop</th><th style="text-align: center">async</th><th style="text-align: center">limits / stats</th><th style="text-align: center">streaming · pipelines · supervision</th></tr></thead><tbody>
+<tr><td><code>std::process</code></td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
+<tr><td><code>tokio::process</code></td><td style="text-align: center">—</td><td style="text-align: center">✓</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
+<tr><td><code>command-group</code></td><td style="text-align: center">✓</td><td style="text-align: center">✓</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
+<tr><td><code>async-process</code></td><td style="text-align: center">—</td><td style="text-align: center">✓ (smol)</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
+<tr><td><code>duct</code></td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">pipelines only</td></tr>
+<tr><td><strong>processkit</strong></td><td style="text-align: center">✓</td><td style="text-align: center">✓ (tokio)</td><td style="text-align: center">✓</td><td style="text-align: center">✓</td></tr>
+</tbody></table>
+</div>
+<p>The first column is the differentiator: descendants are contained and reaped as
+a unit, not just the direct child.</p>
+<h2 id="guides"><a class="header" href="#guides">Guides</a></h2>
+<p>The <a href="cookbook.html">Cookbook</a> maps "I want to do X" directly to a working snippet —
+the fastest way in. The individual guides go deeper on each topic:</p>
+<div class="table-wrapper"><table><thead><tr><th>Guide</th><th>Covers</th></tr></thead><tbody>
+<tr><td><a href="cookbook.html">Cookbook</a></td><td>Task-to-snippet recipes for every capability</td></tr>
+<tr><td><a href="commands.html">Running commands</a></td><td>The full <code>Command</code> builder, every verb, error semantics</td></tr>
+<tr><td><a href="process-groups.html">Process groups</a></td><td>Containment, teardown, signals, suspend/resume, limits, stats</td></tr>
+<tr><td><a href="streaming.html">Streaming &amp; interactive I/O</a></td><td>Line streaming, interactive stdin, readiness probes, profiling</td></tr>
+<tr><td><a href="pipelines.html">Pipelines</a></td><td>Shell-free chains, pipefail attribution, chain timeouts</td></tr>
+<tr><td><a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a></td><td>Deadlines, retry classifiers, <code>CancellationToken</code></td></tr>
+<tr><td><a href="supervision.html">Supervision</a></td><td>Restart policies, backoff &amp; jitter, storm guard, outcomes</td></tr>
+<tr><td><a href="testing.html">Testing your code</a></td><td><code>ProcessRunner</code> seam, scripted/recording/cassette doubles, <code>CliClient</code></td></tr>
+<tr><td><a href="platform-support.html">Platform support</a></td><td>Mechanisms, capability matrices, platform caveats</td></tr>
+<tr><td><a href="upgrading.html">Upgrading</a></td><td>Per-version migration notes</td></tr>
+</tbody></table>
+</div>
+<p>API reference: <a href="https://docs.rs/processkit">docs.rs/processkit</a>.</p>
+<h2 id="feature-flags"><a class="header" href="#feature-flags">Feature flags</a></h2>
+<p>Each flag is additive. The kill-on-drop guarantee is unconditional in every
+configuration.</p>
+<div class="table-wrapper"><table><thead><tr><th>Feature</th><th>Default</th><th>Adds</th></tr></thead><tbody>
+<tr><td><code>process-control</code></td><td>✅</td><td>Signals, suspend/resume, <code>members()</code>, <code>adopt()</code></td></tr>
+<tr><td><code>stats</code></td><td>—</td><td>Resource measurement: CPU time, peak memory, <code>sample_stats</code>, <code>profile</code></td></tr>
+<tr><td><code>limits</code></td><td>—</td><td>Whole-tree resource caps (implies <code>stats</code>)</td></tr>
+<tr><td><code>record</code></td><td>—</td><td>Record/replay cassettes (adds <code>serde</code>)</td></tr>
+<tr><td><code>mock</code></td><td>—</td><td><code>mockall</code>-generated <code>MockRunner</code> (semver-exempt surface)</td></tr>
+<tr><td><code>tracing</code></td><td>—</td><td>Lifecycle events via the <code>tracing</code> crate (never logs argv/env values)</td></tr>
+</tbody></table>
+</div>
+<h2 id="whats-next"><a class="header" href="#whats-next">What's next</a></h2>
+<p>ProcessKit is a Rust library today, published as
+<a href="https://crates.io/crates/processkit">processkit</a> on crates.io. The plan is
+to bring the same approach — kernel-backed whole-tree containment, honest
+error semantics, and testable seams — to other ecosystems: a <strong>Go</strong> package,
+an <strong>F#</strong> library, a <strong>Kotlin</strong> library, and a <strong>Python</strong> wrapper. Each
+implementation will follow the same philosophy and be documented here as it
+ships.</p>
+<hr />
+<h2 id="a-note-on-development"><a class="header" href="#a-note-on-development">A note on development</a></h2>
+<p>This project was built with significant assistance from AI tools throughout the
+design and implementation process. That said, every line of code was read,
+understood, and deliberately chosen — this is not generated output dropped into
+a repository unchecked. The author takes full responsibility for correctness,
+API design, and the published result.</p>
 
                     </main>
 
