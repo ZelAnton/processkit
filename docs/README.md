@@ -10,6 +10,8 @@ ProcessKit is an async child-process management library for Rust (tokio). It sol
 the orphan-process problem at the kernel level and packages a full set of tools
 around it: streaming I/O, shell-free pipelines, supervision, and hermetic testing seams.
 
+[Crate on crates.io](https://crates.io/crates/processkit) · [API reference on docs.rs](https://docs.rs/processkit) · [Source on GitHub](https://github.com/ZelAnton/ProcessKit-rs)
+
 Running external programs is part of everyday software: compiling code, querying
 version control, invoking CLI tools, managing background servers. Every major
 runtime makes it easy to start a child process. What they don't make easy is
