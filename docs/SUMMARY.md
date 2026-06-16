@@ -4,8 +4,6 @@
 
 ---
 
-# Rust
-
 - [Cookbook](cookbook.md)
 - [Running commands](commands.md)
 - [Process groups](process-groups.md)
