@@ -19,11 +19,19 @@ matrices and fine print in one place.
 
 `ProcessGroup::mechanism()` reports which one you actually got:
 
-| Mechanism | Platform | How containment works |
-|---|---|---|
-| `JobObject` | Windows | A Job Object with kill-on-close; children are created suspended, assigned to the job, then resumed — so even a grandchild forked in the first instant is contained |
-| `CgroupV2` | Linux (with delegation) | A private cgroup; children join in `pre_exec`, before `exec`, so descendants can never escape; teardown is `cgroup.kill` |
-| `ProcessGroup` | macOS, BSDs, Linux fallback | POSIX process groups (`setpgid`); teardown is `killpg`; tracked per started/adopted child |
+<table style="table-layout:fixed; width:100%;">
+<colgroup>
+  <col style="width:13%">
+  <col style="width:20%">
+  <col>
+</colgroup>
+<thead><tr><th>Mechanism</th><th>Platform</th><th>How containment works</th></tr></thead>
+<tbody>
+<tr><td><code>JobObject</code></td><td>Windows</td><td>A Job Object with kill-on-close; children are created suspended, assigned to the job, then resumed — so even a grandchild forked in the first instant is contained</td></tr>
+<tr><td><code>CgroupV2</code></td><td>Linux (with delegation)</td><td>A private cgroup; children join in <code>pre_exec</code>, before <code>exec</code>, so descendants can never escape; teardown is <code>cgroup.kill</code></td></tr>
+<tr><td><code>ProcessGroup</code></td><td>macOS, BSDs, Linux fallback</td><td>POSIX process groups (<code>setpgid</code>); teardown is <code>killpg</code>; tracked per started/adopted child</td></tr>
+</tbody>
+</table>
 
 On Linux the cgroup backend requires controller **delegation**, and resource
 limits specifically need this process to run at the **real cgroup-v2 root**. The
