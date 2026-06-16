@@ -387,12 +387,12 @@ error semantics, and testable seams — to other ecosystems: a Go package,
 an F# library, a Kotlin library, and a Python wrapper. Each implementation
 will follow the same philosophy and be documented here as it ships.
 
----
+<div style="margin-top: 3em; padding: 0.9em 1.2em; border: 1px solid var(--table-border-color); border-radius: 4px; font-size: 0.88em; opacity: 0.8; line-height: 1.6;">
 
-## A note on development
+**A note on development.** This project was built with significant assistance
+from AI tools throughout the design and implementation process. That said, every
+line of code was read, understood, and deliberately chosen — this is not
+generated output dropped into a repository unchecked. The author takes full
+responsibility for correctness, API design, and the published result.
 
-This project was built with significant assistance from AI tools throughout the
-design and implementation process. That said, every line of code was read,
-understood, and deliberately chosen — this is not generated output dropped into
-a repository unchecked. The author takes full responsibility for correctness,
-API design, and the published result.
+</div>
