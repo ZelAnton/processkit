@@ -289,7 +289,7 @@ score climbs past <code>failure_threshold</code>, and the supervisor takes <stro
 collective pause</strong> of <code>storm_pause</code> (jittered into <code>[0.5, 1.5)</code> like the
 backoff), resets the score, and resumes.</li>
 </ul>
-<p>Only failures feed the score — crashes and spawn errors, not clean exits
+<p>Only failures feed the score — crashes and spawn errors — not clean exits
 restarted under <code>RestartPolicy::Always</code>. The pause stacks with (runs before)
 the per-restart backoff, and the <code>max_restarts</code> budget is checked first, so a
 storm pause never extends an exhausted budget. Pauses taken are reported in

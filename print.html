@@ -190,6 +190,9 @@
                     <main>
                         <h1 id="processkit"><a class="header" href="#processkit">ProcessKit</a></h1>
 <p><img src="processkit-cover.png" alt="ProcessKit" /></p>
+<p>ProcessKit is an async child-process management library for Rust (tokio). It solves
+the orphan-process problem at the kernel level and packages a full set of tools
+around it: streaming I/O, shell-free pipelines, supervision, and hermetic testing seams.</p>
 <p>Running external programs is part of everyday software: compiling code, querying
 version control, invoking CLI tools, managing background servers. Every major
 runtime makes it easy to start a child process. What they don't make easy is
@@ -223,8 +226,8 @@ rather than assume it.</p>
 <pre><code class="language-toml">[dependencies]
 processkit = "1"
 </code></pre>
-<p>A <a href="https://tokio.rs/">tokio</a> runtime is required. Minimum supported Rust
-version: 1.88.</p>
+<p>A <a href="https://tokio.rs/">tokio</a> runtime is required. Requires Rust 1.88 or later (MSRV).
+The crate is stable at 1.0; breaking changes land only in a new major version.</p>
 <p>The simplest case — run a command, get its trimmed stdout, fail on error:</p>
 <pre><pre class="playground"><code class="language-rust no_run">use processkit::Command;
 
@@ -261,6 +264,7 @@ determines what you receive:</p>
 <tr><td>just the exit code</td><td><code>exit_code()</code></td><td><code>i32</code>; a timed-out run errors instead of returning <code>-1</code></td></tr>
 <tr><td>a yes/no answer</td><td><code>probe()</code></td><td><code>bool</code> — <code>0</code> → true, <code>1</code> → false, anything else errors</td></tr>
 <tr><td>a typed value from stdout</td><td><code>parse(|s| …)</code></td><td><code>T</code>, success required</td></tr>
+<tr><td>typed value, non-zero ok</td><td><code>try_parse(|s| …)</code></td><td><code>Option&lt;T&gt;</code> — <code>None</code> on non-zero</td></tr>
 <tr><td>first matching output line</td><td><code>first_line(|l| …)</code></td><td><code>Option&lt;String&gt;</code></td></tr>
 <tr><td>a live handle for streaming</td><td><code>start()</code></td><td><code>RunningProcess</code></td></tr>
 </tbody></table>
@@ -447,9 +451,9 @@ impl&lt;R: ProcessRunner&gt; Git&lt;R&gt; {
 <div class="table-wrapper"><table><thead><tr><th></th><th style="text-align: center">whole-tree kill-on-drop</th><th style="text-align: center">async</th><th style="text-align: center">limits / stats</th><th style="text-align: center">streaming · pipelines · supervision</th></tr></thead><tbody>
 <tr><td><code>std::process</code></td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
 <tr><td><code>tokio::process</code></td><td style="text-align: center">—</td><td style="text-align: center">✓</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
-<tr><td><code>command-group</code></td><td style="text-align: center">✓</td><td style="text-align: center">✓</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
-<tr><td><code>async-process</code></td><td style="text-align: center">—</td><td style="text-align: center">✓ (smol)</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
-<tr><td><code>duct</code></td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">pipelines only</td></tr>
+<tr><td><a href="https://crates.io/crates/command-group"><code>command-group</code></a></td><td style="text-align: center">✓</td><td style="text-align: center">✓</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
+<tr><td><a href="https://crates.io/crates/async-process"><code>async-process</code></a></td><td style="text-align: center">—</td><td style="text-align: center">✓ (smol)</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
+<tr><td><a href="https://crates.io/crates/duct"><code>duct</code></a></td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">pipelines only</td></tr>
 <tr><td><strong>processkit</strong></td><td style="text-align: center">✓</td><td style="text-align: center">✓ (tokio)</td><td style="text-align: center">✓</td><td style="text-align: center">✓</td></tr>
 </tbody></table>
 </div>
@@ -488,10 +492,9 @@ configuration.</p>
 <p>ProcessKit is a Rust library today, published as
 <a href="https://crates.io/crates/processkit">processkit</a> on crates.io. The plan is
 to bring the same approach — kernel-backed whole-tree containment, honest
-error semantics, and testable seams — to other ecosystems: a <strong>Go</strong> package,
-an <strong>F#</strong> library, a <strong>Kotlin</strong> library, and a <strong>Python</strong> wrapper. Each
-implementation will follow the same philosophy and be documented here as it
-ships.</p>
+error semantics, and testable seams — to other ecosystems: a Go package,
+an F# library, a Kotlin library, and a Python wrapper. Each implementation
+will follow the same philosophy and be documented here as it ships.</p>
 <hr />
 <h2 id="a-note-on-development"><a class="header" href="#a-note-on-development">A note on development</a></h2>
 <p>This project was built with significant assistance from AI tools throughout the
@@ -607,7 +610,6 @@ signal from <code>timeout_signal</code>, with the <code>process-control</code> f
 window to exit, then <code>SIGKILL</code>. A signal-handling child exits early; <code>timed_out()</code>
 stays <code>true</code>. Windows has no signal tier — the deadline kills atomically.</p>
 <p><em>Fine print: <a href="timeouts-and-cancellation.html#graceful-timeout">Timeouts → graceful timeout</a>.</em></p>
-<p><em>Fine print: <a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a>.</em></p>
 <h2 id="show-a-useful-error-message"><a class="header" href="#show-a-useful-error-message">Show a useful error message</a></h2>
 <pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -905,7 +907,7 @@ cassette once and replays them hermetically in CI.</p>
 <h2 id="test-streaming-code--without-processes"><a class="header" href="#test-streaming-code--without-processes">Test streaming code — without processes</a></h2>
 <pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use processkit::{Command, Outcome, ProcessRunner, Finished};
+</span>use processkit::{Command, Outcome, Finished};
 use processkit::testing::{Reply, ScriptedRunner};
 use std::time::Duration;
 
@@ -934,7 +936,7 @@ cli_client!(pub struct Git =&gt; "git");
 
 impl&lt;R: ProcessRunner&gt; Git&lt;R&gt; {
     pub async fn current_branch(&amp;self) -&gt; Result&lt;String&gt; {
-        // A verb takes the args directly (D7); pass a built `command(..)` only
+        // A verb takes the args directly; pass a built `command(..)` only
         // when you need to customize it (per-call timeout, stdin, …).
         self.core.run(["branch", "--show-current"]).await
     }
@@ -947,7 +949,7 @@ impl&lt;R: ProcessRunner&gt; Git&lt;R&gt; {
 (<code>default_timeout</code>, <code>default_env</code>); your methods are just argument lists and
 parsers — and because the runner is injectable, the whole wrapper is testable
 with the previous recipe's <code>ScriptedRunner</code>.</p>
-<p><em>Fine print: <a href="testing.html">Testing your code → CliClient</a>.</em></p>
+<p><em>Fine print: <a href="testing.html#wrapping-a-cli-tool">Testing your code → CliClient</a>.</em></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="running-commands"><a class="header" href="#running-commands">Running commands</a></h1>
 <p><a href="README.html">‹ docs index</a></p>
 <p><code>Command</code> is the entry point of the runner layer: a builder describing <em>what</em>
@@ -1047,7 +1049,7 @@ against the child's output) and the pipe is dropped afterwards to signal EOF.
 The two <em>one-shot</em> sources are consumed by their first run: a retried or
 cloned command reusing them <strong>fails loud</strong> the second time — re-running a
 consumed <code>from_reader</code>/<code>from_lines</code> source is an <code>Error::Io</code> (<code>InvalidInput</code>)
-at launch (D10), not a silent empty stdin. Prefer the reusable sources when
+at launch, not a silent empty stdin. Prefer the reusable sources when
 a command may run more than once.</p>
 <p>For conversational, request/response stdin — write a line, read the answer,
 repeat — use <code>keep_stdin_open()</code> and the streaming API instead: see
@@ -1112,7 +1114,7 @@ cap — even when a streaming consumer is draining lines as they arrive. It boun
 memory, not wall-time, so pair it with <code>timeout</code> against a flooding child.</p>
 <p>Even under a <em>drop</em> policy (<code>DropOldest</code>/<code>DropNewest</code>), the checking verbs that
 hand back stdout as if complete — <code>run</code>, <code>parse</code>, <code>try_parse</code> — <strong>refuse</strong>
-silently-truncated output (B12): if the policy dropped lines they fail with
+silently-truncated output: if the policy dropped lines they fail with
 <code>Error::OutputTooLarge</code> rather than feed a parser a truncated tail. The lenient
 capture verbs (<code>output_string</code> / <code>output_bytes</code>) are unaffected — they return
 the partial result with <code>truncated()</code> set for you to inspect.</p>
@@ -1307,11 +1309,11 @@ match result.outcome() {
 <tr><td><code>Error::Unsupported { operation }</code></td><td>The platform can't do what was asked (and silently skipping would be wrong)</td></tr>
 <tr><td><code>Error::Cancelled { program }</code></td><td>the run's token was cancelled</td></tr>
 <tr><td><code>Error::ResourceLimit { message }</code></td><td>(<code>limits</code> feature) a requested cap couldn't be enforced</td></tr>
-<tr><td><code>Error::Io(source)</code></td><td>A low-level IO error from the crate's own machinery (driving a child, group control, cassette files) — never an arbitrary foreign <code>io::Error</code> (no blanket <code>From</code>, D13)</td></tr>
+<tr><td><code>Error::Io(source)</code></td><td>A low-level IO error from the crate's own machinery (driving a child, group control, cassette files) — never an arbitrary foreign <code>io::Error</code> (no blanket <code>From</code>)</td></tr>
 </tbody></table>
 </div>
 <p><code>Error::diagnostic()</code> returns the most useful human-facing line out of a
-failure that captured output — <code>Exit</code>, and (D12) <code>Timeout</code> / <code>Signalled</code> (the
+failure that captured output — <code>Exit</code>, <code>Timeout</code>, and <code>Signalled</code> (the
 partial streams of a hung-then-killed or crashed tool). Each of those variants'
 one-line <code>Display</code> also appends a bounded excerpt of that diagnostic (the last
 non-empty line, capped at 200 bytes), so a bare <code>eprintln!("{e}")</code> reads
@@ -2332,7 +2334,7 @@ score climbs past <code>failure_threshold</code>, and the supervisor takes <stro
 collective pause</strong> of <code>storm_pause</code> (jittered into <code>[0.5, 1.5)</code> like the
 backoff), resets the score, and resumes.</li>
 </ul>
-<p>Only failures feed the score — crashes and spawn errors, not clean exits
+<p>Only failures feed the score — crashes and spawn errors — not clean exits
 restarted under <code>RestartPolicy::Always</code>. The pause stacks with (runs before)
 the per-restart backoff, and the <code>max_restarts</code> budget is checked first, so a
 storm pause never extends an exhausted budget. Pauses taken are reported in
@@ -2987,6 +2989,8 @@ cargo test
 is marked <strong>Breaking</strong> and carries its own migration note. Notable recent
 non-breaking additions you gain along the way: <code>Command::checked</code> / <code>run_unit</code>
 (0.10.2) and the <code>record</code>-cassette symlink/<code>Display</code>-injection hardening (0.10.2).</p>
+<hr />
+<p><a href="README.html">‹ docs index</a></p>
 
                     </main>
 

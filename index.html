@@ -192,6 +192,9 @@
                     <main>
                         <h1 id="processkit"><a class="header" href="#processkit">ProcessKit</a></h1>
 <p><img src="processkit-cover.png" alt="ProcessKit" /></p>
+<p>ProcessKit is an async child-process management library for Rust (tokio). It solves
+the orphan-process problem at the kernel level and packages a full set of tools
+around it: streaming I/O, shell-free pipelines, supervision, and hermetic testing seams.</p>
 <p>Running external programs is part of everyday software: compiling code, querying
 version control, invoking CLI tools, managing background servers. Every major
 runtime makes it easy to start a child process. What they don't make easy is
@@ -225,8 +228,8 @@ rather than assume it.</p>
 <pre><code class="language-toml">[dependencies]
 processkit = "1"
 </code></pre>
-<p>A <a href="https://tokio.rs/">tokio</a> runtime is required. Minimum supported Rust
-version: 1.88.</p>
+<p>A <a href="https://tokio.rs/">tokio</a> runtime is required. Requires Rust 1.88 or later (MSRV).
+The crate is stable at 1.0; breaking changes land only in a new major version.</p>
 <p>The simplest case — run a command, get its trimmed stdout, fail on error:</p>
 <pre><pre class="playground"><code class="language-rust no_run">use processkit::Command;
 
@@ -263,6 +266,7 @@ determines what you receive:</p>
 <tr><td>just the exit code</td><td><code>exit_code()</code></td><td><code>i32</code>; a timed-out run errors instead of returning <code>-1</code></td></tr>
 <tr><td>a yes/no answer</td><td><code>probe()</code></td><td><code>bool</code> — <code>0</code> → true, <code>1</code> → false, anything else errors</td></tr>
 <tr><td>a typed value from stdout</td><td><code>parse(|s| …)</code></td><td><code>T</code>, success required</td></tr>
+<tr><td>typed value, non-zero ok</td><td><code>try_parse(|s| …)</code></td><td><code>Option&lt;T&gt;</code> — <code>None</code> on non-zero</td></tr>
 <tr><td>first matching output line</td><td><code>first_line(|l| …)</code></td><td><code>Option&lt;String&gt;</code></td></tr>
 <tr><td>a live handle for streaming</td><td><code>start()</code></td><td><code>RunningProcess</code></td></tr>
 </tbody></table>
@@ -449,9 +453,9 @@ impl&lt;R: ProcessRunner&gt; Git&lt;R&gt; {
 <div class="table-wrapper"><table><thead><tr><th></th><th style="text-align: center">whole-tree kill-on-drop</th><th style="text-align: center">async</th><th style="text-align: center">limits / stats</th><th style="text-align: center">streaming · pipelines · supervision</th></tr></thead><tbody>
 <tr><td><code>std::process</code></td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
 <tr><td><code>tokio::process</code></td><td style="text-align: center">—</td><td style="text-align: center">✓</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
-<tr><td><code>command-group</code></td><td style="text-align: center">✓</td><td style="text-align: center">✓</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
-<tr><td><code>async-process</code></td><td style="text-align: center">—</td><td style="text-align: center">✓ (smol)</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
-<tr><td><code>duct</code></td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">pipelines only</td></tr>
+<tr><td><a href="https://crates.io/crates/command-group"><code>command-group</code></a></td><td style="text-align: center">✓</td><td style="text-align: center">✓</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
+<tr><td><a href="https://crates.io/crates/async-process"><code>async-process</code></a></td><td style="text-align: center">—</td><td style="text-align: center">✓ (smol)</td><td style="text-align: center">—</td><td style="text-align: center">—</td></tr>
+<tr><td><a href="https://crates.io/crates/duct"><code>duct</code></a></td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">—</td><td style="text-align: center">pipelines only</td></tr>
 <tr><td><strong>processkit</strong></td><td style="text-align: center">✓</td><td style="text-align: center">✓ (tokio)</td><td style="text-align: center">✓</td><td style="text-align: center">✓</td></tr>
 </tbody></table>
 </div>
@@ -490,10 +494,9 @@ configuration.</p>
 <p>ProcessKit is a Rust library today, published as
 <a href="https://crates.io/crates/processkit">processkit</a> on crates.io. The plan is
 to bring the same approach — kernel-backed whole-tree containment, honest
-error semantics, and testable seams — to other ecosystems: a <strong>Go</strong> package,
-an <strong>F#</strong> library, a <strong>Kotlin</strong> library, and a <strong>Python</strong> wrapper. Each
-implementation will follow the same philosophy and be documented here as it
-ships.</p>
+error semantics, and testable seams — to other ecosystems: a Go package,
+an F# library, a Kotlin library, and a Python wrapper. Each implementation
+will follow the same philosophy and be documented here as it ships.</p>
 <hr />
 <h2 id="a-note-on-development"><a class="header" href="#a-note-on-development">A note on development</a></h2>
 <p>This project was built with significant assistance from AI tools throughout the

@@ -289,7 +289,7 @@ against the child's output) and the pipe is dropped afterwards to signal EOF.
 The two <em>one-shot</em> sources are consumed by their first run: a retried or
 cloned command reusing them <strong>fails loud</strong> the second time — re-running a
 consumed <code>from_reader</code>/<code>from_lines</code> source is an <code>Error::Io</code> (<code>InvalidInput</code>)
-at launch (D10), not a silent empty stdin. Prefer the reusable sources when
+at launch, not a silent empty stdin. Prefer the reusable sources when
 a command may run more than once.</p>
 <p>For conversational, request/response stdin — write a line, read the answer,
 repeat — use <code>keep_stdin_open()</code> and the streaming API instead: see
@@ -354,7 +354,7 @@ cap — even when a streaming consumer is draining lines as they arrive. It boun
 memory, not wall-time, so pair it with <code>timeout</code> against a flooding child.</p>
 <p>Even under a <em>drop</em> policy (<code>DropOldest</code>/<code>DropNewest</code>), the checking verbs that
 hand back stdout as if complete — <code>run</code>, <code>parse</code>, <code>try_parse</code> — <strong>refuse</strong>
-silently-truncated output (B12): if the policy dropped lines they fail with
+silently-truncated output: if the policy dropped lines they fail with
 <code>Error::OutputTooLarge</code> rather than feed a parser a truncated tail. The lenient
 capture verbs (<code>output_string</code> / <code>output_bytes</code>) are unaffected — they return
 the partial result with <code>truncated()</code> set for you to inspect.</p>
@@ -549,11 +549,11 @@ match result.outcome() {
 <tr><td><code>Error::Unsupported { operation }</code></td><td>The platform can't do what was asked (and silently skipping would be wrong)</td></tr>
 <tr><td><code>Error::Cancelled { program }</code></td><td>the run's token was cancelled</td></tr>
 <tr><td><code>Error::ResourceLimit { message }</code></td><td>(<code>limits</code> feature) a requested cap couldn't be enforced</td></tr>
-<tr><td><code>Error::Io(source)</code></td><td>A low-level IO error from the crate's own machinery (driving a child, group control, cassette files) — never an arbitrary foreign <code>io::Error</code> (no blanket <code>From</code>, D13)</td></tr>
+<tr><td><code>Error::Io(source)</code></td><td>A low-level IO error from the crate's own machinery (driving a child, group control, cassette files) — never an arbitrary foreign <code>io::Error</code> (no blanket <code>From</code>)</td></tr>
 </tbody></table>
 </div>
 <p><code>Error::diagnostic()</code> returns the most useful human-facing line out of a
-failure that captured output — <code>Exit</code>, and (D12) <code>Timeout</code> / <code>Signalled</code> (the
+failure that captured output — <code>Exit</code>, <code>Timeout</code>, and <code>Signalled</code> (the
 partial streams of a hung-then-killed or crashed tool). Each of those variants'
 one-line <code>Display</code> also appends a bounded excerpt of that diagnostic (the last
 non-empty line, capped at 200 bytes), so a bare <code>eprintln!("{e}")</code> reads

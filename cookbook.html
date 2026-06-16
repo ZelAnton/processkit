@@ -298,7 +298,6 @@ signal from <code>timeout_signal</code>, with the <code>process-control</code> f
 window to exit, then <code>SIGKILL</code>. A signal-handling child exits early; <code>timed_out()</code>
 stays <code>true</code>. Windows has no signal tier — the deadline kills atomically.</p>
 <p><em>Fine print: <a href="timeouts-and-cancellation.html#graceful-timeout">Timeouts → graceful timeout</a>.</em></p>
-<p><em>Fine print: <a href="timeouts-and-cancellation.html">Timeouts, retries &amp; cancellation</a>.</em></p>
 <h2 id="show-a-useful-error-message"><a class="header" href="#show-a-useful-error-message">Show a useful error message</a></h2>
 <pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -596,7 +595,7 @@ cassette once and replays them hermetically in CI.</p>
 <h2 id="test-streaming-code--without-processes"><a class="header" href="#test-streaming-code--without-processes">Test streaming code — without processes</a></h2>
 <pre><pre class="playground"><code class="language-rust no_run"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>use processkit::{Command, Outcome, ProcessRunner, Finished};
+</span>use processkit::{Command, Outcome, Finished};
 use processkit::testing::{Reply, ScriptedRunner};
 use std::time::Duration;
 
@@ -625,7 +624,7 @@ cli_client!(pub struct Git =&gt; "git");
 
 impl&lt;R: ProcessRunner&gt; Git&lt;R&gt; {
     pub async fn current_branch(&amp;self) -&gt; Result&lt;String&gt; {
-        // A verb takes the args directly (D7); pass a built `command(..)` only
+        // A verb takes the args directly; pass a built `command(..)` only
         // when you need to customize it (per-call timeout, stdin, …).
         self.core.run(["branch", "--show-current"]).await
     }
@@ -638,7 +637,7 @@ impl&lt;R: ProcessRunner&gt; Git&lt;R&gt; {
 (<code>default_timeout</code>, <code>default_env</code>); your methods are just argument lists and
 parsers — and because the runner is injectable, the whole wrapper is testable
 with the previous recipe's <code>ScriptedRunner</code>.</p>
-<p><em>Fine print: <a href="testing.html">Testing your code → CliClient</a>.</em></p>
+<p><em>Fine print: <a href="testing.html#wrapping-a-cli-tool">Testing your code → CliClient</a>.</em></p>
 
                     </main>
 
