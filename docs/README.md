@@ -10,12 +10,16 @@ ProcessKit is an async child-process management library for Rust (tokio). It sol
 the orphan-process problem at the kernel level and packages a full set of tools
 around it: streaming I/O, shell-free pipelines, supervision, and hermetic testing seams.
 
-[Crate on crates.io](https://crates.io/crates/processkit) · [API reference on docs.rs](https://docs.rs/processkit) · [Source on GitHub](https://github.com/ZelAnton/ProcessKit-rs)
-
 Running external programs is part of everyday software: compiling code, querying
 version control, invoking CLI tools, managing background servers. Every major
 runtime makes it easy to start a child process. What they don't make easy is
 cleaning up after one.
+
+<div style="display:flex; gap:0.6em; flex-wrap:wrap; margin-bottom:2em;">
+  <a href="https://crates.io/crates/processkit" style="display:inline-block; padding:0.35em 0.8em; border:1px solid var(--table-border-color); border-radius:4px; font-size:0.88em; text-decoration:none; color:var(--links);">crates.io ↗</a>
+  <a href="https://docs.rs/processkit" style="display:inline-block; padding:0.35em 0.8em; border:1px solid var(--table-border-color); border-radius:4px; font-size:0.88em; text-decoration:none; color:var(--links);">docs.rs ↗</a>
+  <a href="https://github.com/ZelAnton/ProcessKit-rs" style="display:inline-block; padding:0.35em 0.8em; border:1px solid var(--table-border-color); border-radius:4px; font-size:0.88em; text-decoration:none; color:var(--links);">GitHub ↗</a>
+</div>
 
 ## The orphan problem
 
