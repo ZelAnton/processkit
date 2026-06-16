@@ -4,7 +4,7 @@
 [![docs.rs](https://docs.rs/processkit/badge.svg)](https://docs.rs/processkit)
 [![GitHub](https://img.shields.io/badge/source-GitHub-blue)](https://github.com/ZelAnton/ProcessKit-rs)
 
-ProcessKit is an async child-process management library for Rust (tokio). It solves
+**ProcessKit** is an async child-process management library for Rust (tokio). It solves
 the orphan-process problem at the kernel level and packages a full set of tools
 around it: streaming I/O, shell-free pipelines, supervision, and hermetic testing seams.
 
