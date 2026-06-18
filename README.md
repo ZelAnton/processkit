@@ -1,6 +1,6 @@
 # ProcessKit — documentation site
 
-Source for the **[ProcessKit documentation site](https://zelanton.github.io/ProcessKit/)** — an umbrella guide for the ProcessKit family of async child-process management libraries.
+Source for the **[ProcessKit documentation site](https://zelanton.github.io/processkit/)** — an umbrella guide for the ProcessKit family of async child-process management libraries.
 
 Currently covering:
 
